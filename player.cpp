@@ -67,8 +67,7 @@ void Player::init(int _id) {
 
 
 void Player::spawn() {
-	pos.x = spawn_pos[id][0]*64;
-	pos.y = spawn_pos[id][1]*64;
+	pos = get_rand_spawn();
 	dead = 0;
 
 }

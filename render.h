@@ -7,8 +7,11 @@
 #include "texture.h"
 #include <GL/gl.h>
 
+extern char * msg;
+
 void render_init(int w, int h, bool fullscreen);
 void render(double dt);
+void render_splash();
 
 struct animation_t {
   Texture* texture;

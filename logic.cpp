@@ -70,3 +70,10 @@ Player * create_player(char * nick, int id) {
 	players[id] = p;
 	return p;
 }
+
+unsigned long curtime()  {
+	struct timeval ts;
+	gettimeofday(&ts, NULL);
+	return ts.tv_sec + ts.tv_usec/1000000.0;
+}
+

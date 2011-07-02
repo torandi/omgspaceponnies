@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <vector>
 #include <SDL/SDL.h>
+#include <sys/time.h>
 
 #include "vector.h"
 
@@ -41,4 +42,9 @@ extern vector_t mouse;
 
 extern bool keys[SDLK_LAST];
 
+extern bool ready;
+
+extern char * myname;
+
+unsigned long curtime();
 #endif /* COMMON_H */

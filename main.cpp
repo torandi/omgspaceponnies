@@ -24,7 +24,11 @@ Player * players[4] = {NULL, NULL, NULL, NULL};
 
 Player * me = NULL; 
 
+bool ready = false;
+
 vector_t mouse;
+
+char * myname;
 
 static void setup(){
 	render_init(1024, 768, false);
@@ -39,45 +43,61 @@ static void poll(bool* run){
 
 	SDL_Event event;
 	while ( SDL_PollEvent(&event) ){
-		switch (event.type){
-		case SDL_MOUSEBUTTONDOWN:
-			if(event.button.button == 1)
-				me->fire = true;
-			break;
-		case SDL_MOUSEBUTTONUP:
-			if(event.button.button == 1)
-				me->fire = false;
-			break;
+		if(ready) {
+			switch (event.type){
+				case SDL_MOUSEBUTTONDOWN:
+					if(event.button.button == 1)
+						me->fire = true;
+					break;
+				case SDL_MOUSEBUTTONUP:
+					if(event.button.button == 1)
+						me->fire = false;
+					break;
 
-		case SDL_MOUSEMOTION:
-			mouse.x = event.motion.x;
-			mouse.y = event.motion.y;
-			break;
+				case SDL_MOUSEMOTION:
+					mouse.x = event.motion.x;
+					mouse.y = event.motion.y;
+					break;
 
-		case SDL_KEYDOWN:
-			switch(event.key.keysym.sym) {
-				case SDLK_ESCAPE:
+				case SDL_KEYDOWN:
+					switch(event.key.keysym.sym) {
+						case SDLK_ESCAPE:
+							*run = false;
+							break;
+						default:
+							keys[event.key.keysym.sym] = true;
+					}
+					break;
+				
+				case SDL_KEYUP:
+					keys[event.key.keysym.sym] = false;
+					break;
+					
+
+				case SDL_QUIT:
 					*run = false;
 					break;
-				default:
-					keys[event.key.keysym.sym] = true;
 			}
-			break;
-		
-		case SDL_KEYUP:
-			keys[event.key.keysym.sym] = false;
-			break;
-			
-
-		case SDL_QUIT:
-			*run = false;
-			break;
+		} else {
+			switch (event.type){
+				case SDL_KEYDOWN:
+					if(event.key.keysym.sym == SDLK_ESCAPE) {
+						*run = false;
+						return;
+					}
+					break;
+				
+				case SDL_QUIT:
+					*run = false;
+					break;
+			}
 		}
 	}
 }
 
 
 static void show_usage(){
+  fprintf(stderr, "./omgponnies [options] nick\n");
   fprintf(stderr, "  -p, --port=PORT Use PORT for communication (default: %d).\n", PORT);
   fprintf(stderr, "  -h, --help      This help text.\n");
 }
@@ -111,6 +131,13 @@ int main(int argc, char* argv[]){
 	}
   }
 
+	if(argc - optind != 1) {
+		show_usage();
+		exit(1);
+	}
+
+	myname = argv[optind++];
+
   /* verbose dst */
   if ( verbose_flag ){
 	  verbose = stdout;
@@ -120,11 +147,17 @@ int main(int argc, char* argv[]){
 
 	srand(time(NULL));
 
-  setup();
-  
-	me = create_player("PLAYUR ONE", 1); 
+	setup();
 
   bool run = true;
+
+	while(!ready && run) {
+		render_splash();
+		usleep(1000);
+		poll(&run);
+		network();
+	}
+  
   struct timeval ref;
   gettimeofday(&ref, NULL);
 

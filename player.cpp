@@ -25,6 +25,7 @@ void Player::init(int _id) {
 	power = 1.0;
 	fire = false;
 	id = _id;
+	dead = false;
 
 	current_base_texture = TEXTURE_BASE;
 
@@ -34,28 +35,28 @@ void Player::init(int _id) {
 	vector_t size = vector_t(PLAYER_W, PLAYER_H);
 
 	//Base
-	sprintf(texture,"gfx/player%i/base.png", id);
+	sprintf(texture,"gfx/player%i/base.png", id+1);
    textures[TEXTURE_BASE] = RenderObject(texture, 1, 25, size);
 
 	//Dash
-	sprintf(texture,"gfx/player%i/dash.png", id);
+	sprintf(texture,"gfx/dash.png", id+1);
    textures[TEXTURE_DASH] = RenderObject(texture, 1, 25, size);
 
 	//Left
-	sprintf(texture,"gfx/player%i/left.png", id);
+	sprintf(texture,"gfx/left.png", id+1);
    textures[TEXTURE_LEFT] = RenderObject(texture, 1, 25, size);
 
 	//Right
-	sprintf(texture,"gfx/player%i/right.png", id);
+	sprintf(texture,"gfx/right.png", id+1);
    textures[TEXTURE_RIGHT] = RenderObject(texture, 1, 25, size);
 
 
 	//Tail
-	sprintf(texture,"gfx/player%i/tail.png", id);
+	sprintf(texture,"gfx/tail.png", id+1);
    textures[TEXTURE_TAIL] = RenderObject(texture, 9, 25, size);
 
 	//Dispencer
-	sprintf(texture,"gfx/player%i/dispencer.png", id);
+	sprintf(texture,"gfx/dispencer.png", id+1);
    textures[TEXTURE_DISPENCER] = RenderObject(texture, 6, 25, size);
 
 }
@@ -88,7 +89,9 @@ void Player::render(double dt) {
 	glTranslatef(-PLAYER_W*0.5,-PLAYER_H*0.5, 0);
 	
 	//Draw textures:
-	textures[current_base_texture].render(dt);
+	textures[TEXTURE_BASE].render(dt);
+	if(current_base_texture != TEXTURE_BASE)
+		textures[current_base_texture].render(dt);
 	textures[TEXTURE_TAIL].render(dt);
 	if(fire)
 		textures[TEXTURE_DISPENCER].render(dt);

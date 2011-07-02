@@ -9,10 +9,14 @@
 #include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
+
 #include "common.h"
 #include "network.h"
+#include "render.h"
+#include "player.h"
+#include "logic.h"
 
-#define CMD(str) strncmp(buffer,str,3) == 0
+#define CMD(str) strncmp(data,str,3) == 0
 
 /**
  * Protocol:
@@ -23,7 +27,18 @@ static int sockfd;
 static fd_set readset;
 static struct timeval tv;
 
+static int requested_slot = -1;
+static unsigned long request_sent_time;
+
+static enum {
+	STATE_INIT,
+	STATE_REQUESTED,
+	STATE_PLAYING
+} state;
+
 void init_network() {
+
+	state = STATE_INIT;
 
 	sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 	if(sockfd < 0) {
@@ -54,6 +69,8 @@ void init_network() {
 		perror("network(): bind");
 		exit(1);
 	}
+
+	request_slot(0);
 }
 
 /**
@@ -73,13 +90,57 @@ void network() {
 
 	if(select(sockfd+1,&readset,NULL,NULL,&tv) > 0) {
 		size = recvfrom(sockfd, buffer, 1024, 0, &src_addr, &addrlen);
-		if(size < 3) {
-			
+		if(strncmp(buffer,"omg ",4)==0) {
+				char * data = buffer+4;
+				switch(state) {
+					case STATE_INIT:
+						break;
+					case STATE_REQUESTED:
+						if(CMD("nak")) {
+							int slot;
+							sscanf(data, "nak %d", &slot);
+							printf("Recived nak for slot %i\n", slot);
+							++slot;
+							if(slot < 4) 
+								request_slot(slot);
+							else {
+								printf("No free slots, shutting down");
+								exit(2);
+							}
+						}
+						break;
+					case STATE_PLAYING: 
+						if(CMD("req")) {
+							int slot;
+							sscanf(data, "req %d", &slot);
+							if(me != NULL && me->id == slot) {
+								sprintf(buffer, "omg nak %i", slot);
+								send_msg(buffer);
+							}
+						}
+						break;
+				}
 		} else {
 			buffer[size] = 0;
 			fprintf(stderr,"Recieved invalid data: %s\n", buffer);
 		}
 	}
+
+	//Check if the slot request has time out (aka succeded)
+	if(request_sent_time+2.0 < curtime() && state == STATE_REQUESTED) {
+		ready = true;
+		me = create_player(myname, requested_slot);
+		state = STATE_PLAYING;
+	}
+}
+
+void request_slot(int i) {
+	requested_slot = i;
+	request_sent_time = curtime();
+	char buffer[32];
+	sprintf(buffer, "omg req %i", i);
+	state = STATE_REQUESTED;
+	send_msg(buffer);
 }
 
 void send_msg(const char * buffer) {

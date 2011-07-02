@@ -3,6 +3,7 @@
 
 	void network();
 	void init_network();
-	void send_cat();
+	void send_msg(const char * buffer);
+	void request_slot(int i);
 
 #endif

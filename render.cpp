@@ -5,6 +5,9 @@
 #include <SDL/SDL.h>
 #include "texture.h"
 #include <math.h>
+#include "render_object.h"
+
+char * msg;
 
 #define ANIM_MAX 0
 
@@ -22,6 +25,7 @@ static struct {
   float h;
 } window;
 
+static RenderObject splash;
 
 animation_t load_anim(const char* filename, unsigned int frames, unsigned int fps){
   animation_t tmp;
@@ -82,7 +86,13 @@ void render_init(int w, int h, bool fullscreen){
   glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   /* load textures */
- // animation[ANIM_WAIVING] = load_anim("data/waving.png", 17, 25);
+  splash = RenderObject("gfx/splash.png", 1, 0,vector_t(1024,768));
+}
+
+void render_splash() {
+	glClear(GL_COLOR_BUFFER_BIT);
+	splash.render(0);
+	SDL_GL_SwapBuffers();
 }
 
 void render(double dt){

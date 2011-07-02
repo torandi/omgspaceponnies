@@ -17,9 +17,9 @@ clean:
 
 -include $(OBJS:.o=.d)
 
-dispencer.png: $(wildcard gfx_parts/player1/dispencer_*.png)
-	./makesprite gfx/player1/dispencer.png
+dispencer.png: $(wildcard gfx_parts/dispencer_*.png)
+	./makesprite gfx/dispencer.png
 	
 
-tail.png: $(wildcard gfx_parts/player1/tail_*.png)
-	./makesprite gfx/player1/tail.png
+tail.png: $(wildcard gfx_parts/tail_*.png)
+	./makesprite gfx/tail.png

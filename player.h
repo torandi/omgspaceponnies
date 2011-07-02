@@ -22,7 +22,7 @@ struct Player {
 
 	vector_t fire_end;
 
-	bool dashing, fire;
+	bool dashing, fire, dead;
 
 	int id;
 

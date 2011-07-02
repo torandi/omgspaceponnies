@@ -9,6 +9,7 @@
 #include "network.h"
 #include "render.h"
 #include "logic.h"
+#include "level.h"
 
 bool keys[SDLK_LAST];
 
@@ -32,6 +33,7 @@ char * myname;
 
 static void setup(){
 	render_init(1024, 768, false);
+	init_level();
 	init_network();
 }
 

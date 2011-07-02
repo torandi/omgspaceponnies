@@ -27,5 +27,6 @@ Texture::texcoord_t prepare_animation(animation_t * anim, double dt);
 float radians_to_degrees(double rad);
 
 extern GLfloat rbcolors[12][3];				// Rainbow Of Colors
+extern float texture_colors[3];
 
 #endif /* render_H */

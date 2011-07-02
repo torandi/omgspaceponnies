@@ -128,6 +128,9 @@ void network() {
 							if(me != NULL && me->id == slot) {
 								sprintf(buffer, "omg nak %i", slot);
 								send_msg(buffer);
+							} else { 
+								sprintf(buffer, "omg hai %i %f %f %f", me->id, me->pos.x, me->pos.y, me->angle);
+								send_msg(buffer);
 							}
 						} else if(CMD("mov")) {
 							int id;
@@ -135,6 +138,13 @@ void network() {
 							Player * p = get_or_create_plajur(id);
 							if(p != NULL) {
 								sscanf(data, "mov %d %f %f %f %d %f %f %f",&id, &p->pos.x, &p->pos.y, &p->angle, &p->current_base_texture, &p->dx, &p->dy, &p->da);
+							}
+						} else if(CMD("hai")) {
+							int id;
+							sscanf(data, "hai %d", &id);
+							Player * p = get_or_create_plajur(id);
+							if(p != NULL) {
+								sscanf(data, "hai %d %f %f %f %d %f %f %f",&id, &p->pos.x, &p->pos.y, &p->angle);
 							}
 						} else if(CMD("rot")) {
 							int id;
@@ -167,7 +177,7 @@ void network() {
 	}
 
 	//Check if the slot request has time out (aka succeded)
-	if(request_sent_time+2.0 < curtime() && state == STATE_REQUESTED) {
+	if(request_sent_time+0.5 < curtime() && state == STATE_REQUESTED) {
 		ready = true;
 		me = create_player(myname, requested_slot);
 		state = STATE_PLAYING;

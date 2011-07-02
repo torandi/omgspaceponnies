@@ -52,6 +52,8 @@ struct Player {
 	void logic(double dt);
 
 	void calc_fire(bool detect_kill);
+	
+	bool check_collision(const vector_t &tl, const vector_t &br);
 private:
 	void init(int _id);
 };

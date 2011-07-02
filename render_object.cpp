@@ -12,7 +12,7 @@ RenderObject::RenderObject(const char * sprite, unsigned int frames, unsigned in
 
 void RenderObject::render(double dt) {
 	if(size.x > 0 || size.y > 0) {
-
+		glColor3f(texture_colors[0], texture_colors[1], texture_colors[2]);
 		Texture::texcoord_t tc = prepare_animation(&anim, dt);
 		glBegin(GL_QUADS);
 			glTexCoord2f(tc.a[0],1-tc.a[1]); glVertex2f(0,size.y);

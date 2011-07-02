@@ -42,24 +42,24 @@ void Player::init(int _id) {
    textures[TEXTURE_BASE] = RenderObject(texture, 1, 25, size);
 
 	//Dash
-	sprintf(texture,"gfx/dash.png", id+1);
+	sprintf(texture,"gfx/dash.png");
    textures[TEXTURE_DASH] = RenderObject(texture, 1, 25, size);
 
 	//Left
-	sprintf(texture,"gfx/left.png", id+1);
+	sprintf(texture,"gfx/left.png");
    textures[TEXTURE_LEFT] = RenderObject(texture, 1, 25, size);
 
 	//Right
-	sprintf(texture,"gfx/right.png", id+1);
+	sprintf(texture,"gfx/right.png");
    textures[TEXTURE_RIGHT] = RenderObject(texture, 1, 25, size);
 
 
 	//Tail
-	sprintf(texture,"gfx/tail.png", id+1);
+	sprintf(texture,"gfx/tail.png");
    textures[TEXTURE_TAIL] = RenderObject(texture, 9, 25, size);
 
 	//Dispencer
-	sprintf(texture,"gfx/dispencer.png", id+1);
+	sprintf(texture,"gfx/dispencer.png");
    textures[TEXTURE_DISPENCER] = RenderObject(texture, 6, 25, size);
 
 }
@@ -118,8 +118,8 @@ void Player::render(double dt) {
 	glEnd();
 
 	if(fire) {
+		glLineWidth(2.0f);
 		glBegin(GL_LINES);
-			glLineWidth(1);
 			for(int i=0;i<12;++i) {
 				float dx = i*cos(angle+PI/2.0) - 6*cos(angle+PI/2.0) + cos(angle)*PLAYER_H/2.0;
 				float dy = i*sin(angle+PI/2.0) - 6*sin(angle+PI/2.0) + sin(angle)*PLAYER_H/2.0;
@@ -151,3 +151,4 @@ void Player::calc_fire(bool detect_kill) {
 	fire_end.x = pos.x + 300*cos(angle);
 	fire_end.y = pos.y + 300*sin(angle);
 }
+

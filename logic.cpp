@@ -6,6 +6,7 @@
 #include "logic.h"
 #include "player.h"
 #include "network.h"
+#include "level.h"
 
 #define SEND_DELAY 0.1f
 
@@ -51,7 +52,7 @@ void logic(double dt) {
 
 		if( (me->pos - me->target).norm() < s*1.5)
 			me->dashing = false;
-		else if( me->dash_start+0.5 > (now.tv_sec+now.tv_usec/1000000.0))
+		else if( me->dash_start+1 > (now.tv_sec+now.tv_usec/1000000.0))
 			me->current_base_texture = TEXTURE_DASH;
 	}
 
@@ -71,6 +72,43 @@ void logic(double dt) {
 		me->calc_fire(true);
 	}
 
+	int mx, my;
+	float ax, ay;
+	ax = (PLAYER_W/2.0) * cos(me->angle);
+	ay = (PLAYER_H/2.0) * sin(me->angle);
+	glPointSize(2.0f);
+	glColor3f(1,1,1);
+	glDisable(GL_TEXTURE_2D);
+	glBegin(GL_POINTS);
+		glVertex2f(me->pos.x+ax,me->pos.y);
+		glVertex2f(me->pos.x-ax,me->pos.y);
+		glVertex2f(me->pos.x,me->pos.y+ay);
+		glVertex2f(me->pos.x,me->pos.y-ay);
+	glEnd();
+	glEnable(GL_TEXTURE_2D);
+	calc_map_index(vector_t(me->pos.x-ax,me->pos.y), mx, my);
+	if(map_value(mx, my)>0) {
+		me->pos = last;
+		goto check_done;
+	}
+	calc_map_index(vector_t(me->pos.x+ax,me->pos.y), mx, my);
+	if(map_value(mx, my)>0) {
+		me->pos = last;
+		goto check_done;
+	}
+	calc_map_index(vector_t(me->pos.x,me->pos.y+ay), mx, my);
+	if(map_value(mx, my)>0) {
+		me->pos = last;
+		goto check_done;
+	}
+	calc_map_index(vector_t(me->pos.x,me->pos.y-ay), mx, my);
+	if(map_value(mx, my)>0) {
+		me->pos = last;
+		goto check_done;
+	}
+
+
+	check_done:
 
 	if(last_send+SEND_DELAY < curtime()) {
 		char buffer[1024];

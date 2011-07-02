@@ -6,6 +6,7 @@
 #include "texture.h"
 #include <math.h>
 #include "render_object.h"
+#include "level.h"
 
 char * msg;
 
@@ -20,12 +21,18 @@ GLfloat rbcolors[12][3]=				// Rainbow Of Colors
 
 static void glCircle3i(GLint x, GLint y, GLint radius);
 
+static int next_wall_color = 0;
+
 static struct {
   float w;
   float h;
 } window;
 
 static RenderObject splash;
+static RenderObject box;
+static RenderObject backdrop;
+
+float texture_colors[3] = {1,1,1};
 
 animation_t load_anim(const char* filename, unsigned int frames, unsigned int fps){
   animation_t tmp;
@@ -45,14 +52,6 @@ Texture::texcoord_t prepare_animation(animation_t * anim, double dt) {
 	anim->acc = fmod(anim->acc + dt, anim->delay);
 	anim->s = anim->acc / anim->delay;
 	return tc;
-    /*vertices[ 0] = tc.a[0];
-    vertices[ 1] = 1-tc.a[1];
-    vertices[ 5] = tc.b[0];
-    vertices[ 6] = 1-tc.b[1];
-    vertices[10] = tc.c[0];
-    vertices[11] = 1-tc.c[1];
-    vertices[15] = tc.d[0];
-    vertices[16] = 1-tc.d[1];*/
 }
 
 
@@ -87,6 +86,8 @@ void render_init(int w, int h, bool fullscreen){
 
   /* load textures */
   splash = RenderObject("gfx/splash.png", 1, 0,vector_t(1024,768));
+  backdrop = RenderObject("gfx/space.jpg", 1, 0,vector_t(1600,1200));
+  box = RenderObject("gfx/box.png", 1, 0,vector_t(64,64));
 }
 
 void render_splash() {
@@ -98,13 +99,51 @@ void render_splash() {
 void render(double dt){
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	bool render = true;
+	glPushMatrix();
 
-	for(int i=0; i < 4; ++i) {
+	glTranslatef(-window.w/2.0, -window.h/2.0, 0);
+	
+	texture_colors[0] = 1;
+	texture_colors[1] = 0.3;
+	texture_colors[2] = 1;
+
+	backdrop.render(dt);
+
+	glPopMatrix();
+
+	for(int i=0; i < NUM_PLAYERS; ++i) {
 		if(players[i] != NULL) {
 			players[i]->render(dt);
+	float ax, ay, hyp;
+	hyp = vector_t(PLAYER_W/2.0,PLAYER_H/2.0).norm();
+	ax = abs((PLAYER_H/2.0) * cos(players[i]->angle)) + abs((PLAYER_W/2.0)*sin(players[i]->angle));
+	ay = abs((PLAYER_W/2.0) * cos(players[i]->angle)) + abs((PLAYER_H/2.0)*sin(players[i]->angle));
+	glPointSize(2.0f);
+	glColor3f(1,1,1);
+	glDisable(GL_TEXTURE_2D);
+	glBegin(GL_POINTS);
+		glVertex2f(players[i]->pos.x+ax,players[i]->pos.y);
+		glVertex2f(players[i]->pos.x-ax,players[i]->pos.y);
+		glVertex2f(players[i]->pos.x,players[i]->pos.y+ay);
+		glVertex2f(players[i]->pos.x,players[i]->pos.y-ay);
+	glEnd();
+	glEnable(GL_TEXTURE_2D);
 		}
 	}
+
+	//Draw walls
+
+	for(int x=0; x<MAP_WIDTH; ++x) {
+		for(int y=0; y<MAP_HEIGHT; ++y) {
+			if(map_value(x, y) > 0) {
+				glPushMatrix();
+				glTranslatef(x*64+32,y*64+32,0);
+				box.render(dt);
+				glPopMatrix();
+			}	
+		}
+	}
+
 
 	SDL_GL_SwapBuffers();
 }

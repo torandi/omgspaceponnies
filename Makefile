@@ -1,4 +1,4 @@
-OBJS = main.o render.o network.o texture.o resource.o player.o
+OBJS = main.o render.o network.o texture.o resource.o player.o logic.o
 CFLAGS += -Wall `sdl-config --cflags`
 LDFLAGS += `sdl-config --libs`  -lGL -lSDL_image
 

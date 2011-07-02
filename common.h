@@ -4,9 +4,12 @@
 #include <cstdio>
 #include <stdint.h>
 #include <vector>
+#include <SDL/SDL.h>
 #include "player.h"
 
 #define PORT 7412
+
+#define PI 3.14159265
 
 /**
  * Current animation step.
@@ -27,5 +30,7 @@ extern std::vector<Player> players;
 extern Player me;
 
 extern vector_t mouse;
+
+extern bool keys[SDLK_LAST];
 
 #endif /* COMMON_H */

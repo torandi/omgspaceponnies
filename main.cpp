@@ -8,8 +8,9 @@
 #include "common.h"
 #include "network.h"
 #include "render.h"
+#include "logic.h"
 
-
+bool keys[SDLK_LAST];
 
 #define REF_FPS 30
 #define REF_DT (1.0/REF_FPS)
@@ -43,12 +44,32 @@ static void poll(bool* run){
 	while ( SDL_PollEvent(&event) ){
 		switch (event.type){
 		case SDL_MOUSEBUTTONDOWN:
+			if(event.button.button == 1)
+				me.fire = true;
+			break;
+		case SDL_MOUSEBUTTONUP:
+			if(event.button.button == 1)
+				me.fire = false;
 			break;
 
 		case SDL_MOUSEMOTION:
 			mouse.x = event.motion.x;
 			mouse.y = event.motion.y;
 			break;
+
+		case SDL_KEYDOWN:
+			switch(event.key.keysym.sym) {
+				case SDLK_SPACE:
+					me.dash();
+					break;
+				default:
+					keys[event.key.keysym.sym] = true;
+			}
+			break;
+		
+		case SDL_KEYUP:
+			keys[event.key.keysym.sym] = false;
+			
 
 		case SDL_QUIT:
 			*run = false;
@@ -119,6 +140,7 @@ int main(int argc, char* argv[]){
     /* do stuff */
     poll(&run);
 	 network();
+	 logic(dt);
 	 render(dt);
 		 
     /* framelimiter */

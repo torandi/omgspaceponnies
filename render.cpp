@@ -7,8 +7,12 @@
 
 #define ANIM_MAX 0
 
+
 #define PLAYER_W 32
 #define PLAYER_H 50
+
+static float radians_to_degrees(double rad);
+static void glCircle3i(GLint x, GLint y, GLint radius);
 
 static struct {
   float w;
@@ -73,9 +77,17 @@ void render(double dt){
 	animation_t* anim = NULL;
 
 
+
+	glMatrixMode(GL_MODELVIEW);
+
 	glPushMatrix();
-	
-	glTranslatef(me.pos.x-PLAYER_W/2.0, me.pos.y-PLAYER_H/2.0f, 0);
+
+
+	glTranslatef(me.pos.x, me.pos.y, 0);
+
+	glRotatef(radians_to_degrees(me.angle), 0, 0, 1.0);
+
+	glTranslatef(-PLAYER_W/2.0,-PLAYER_H/2.0,0);
 
 	glDisable(GL_TEXTURE_2D);
 	glColor3f(1,1,1);
@@ -88,6 +100,8 @@ void render(double dt){
 	glEnd();
 
 	glPopMatrix();
+	
+	glMatrixMode(GL_PROJECTION);
 
 	glColor3f(1,0,0);
 	glPointSize(5);
@@ -101,6 +115,15 @@ void render(double dt){
 		glVertex2f(mouse.x, mouse.y);
 	glEnd();
 
+	if(me.fire) {
+		glColor3f(0,0,1);
+		glLineWidth(5.0f);
+		glBegin(GL_LINES);
+			glVertex2f(me.pos.x, me.pos.y);
+			glVertex2f(me.fire_end.x, me.fire_end.y);
+		glEnd();
+	}
+
 	SDL_GL_SwapBuffers();
 
   /*
@@ -109,3 +132,17 @@ void render(double dt){
     Texture::texcoord_t tc = anim->texture->index_to_texcoord(index);
 	*/
 }
+
+static float radians_to_degrees(double rad) {
+	return (float) (rad * (180/PI));
+}
+
+static void glCircle3i(GLint x, GLint y, GLint radius) { 
+	float angle; 
+	glBegin(GL_LINE_LOOP); 
+		for(int i = 0; i < 100; i++) { 
+			angle = i*2*PI/100.0f; 
+			glVertex3f(x + (cos(angle) * radius), y + (sin(angle) * radius),0.0f); 
+		} 
+	glEnd(); 
+} 

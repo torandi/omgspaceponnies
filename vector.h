@@ -17,6 +17,11 @@ struct vector_t {
 
   }
 
+  vector_t(const vector_t &v) 
+  : x(v.x)
+  , y(v.y) {
+  }
+
   vector_t operator-(const vector_t& rhs) const {
     return vector_t(x - rhs.x, y - rhs.y);
   }

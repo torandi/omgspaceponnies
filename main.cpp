@@ -59,8 +59,8 @@ static void poll(bool* run){
 
 		case SDL_KEYDOWN:
 			switch(event.key.keysym.sym) {
-				case SDLK_SPACE:
-					me.dash();
+				case SDLK_ESCAPE:
+					*run = false;
 					break;
 				default:
 					keys[event.key.keysym.sym] = true;
@@ -69,6 +69,7 @@ static void poll(bool* run){
 		
 		case SDL_KEYUP:
 			keys[event.key.keysym.sym] = false;
+			break;
 			
 
 		case SDL_QUIT:

@@ -85,7 +85,7 @@ void render(double dt){
 
 	glTranslatef(me.pos.x, me.pos.y, 0);
 
-	glRotatef(radians_to_degrees(me.angle), 0, 0, 1.0);
+	glRotatef(radians_to_degrees(me.angle+PI/2.0), 0, 0, 1.0);
 
 	glTranslatef(-PLAYER_W/2.0,-PLAYER_H/2.0,0);
 

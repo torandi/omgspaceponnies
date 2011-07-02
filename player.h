@@ -50,6 +50,8 @@ struct Player {
 	void render(double dt);
 
 	void logic(double dt);
+
+	void calc_fire(bool detect_kill);
 private:
 	void init(int _id);
 };

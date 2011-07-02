@@ -143,9 +143,11 @@ void Player::logic(double dt) {
 	angle += dt*da;
 
 	if(fire) {
-		float arc = dt*da*fire_end.norm();
-		float a = PI + dt*da/2.0 - angle;
-		fire_end.x += dt*dx;// + sin(a)*arc;
-		fire_end.y += dt*dy;// + cos(a)*arc;
+		calc_fire(false);
 	}
+}
+
+void Player::calc_fire(bool detect_kill) {
+	fire_end.x = pos.x + 300*cos(angle);
+	fire_end.y = pos.y + 300*sin(angle);
 }

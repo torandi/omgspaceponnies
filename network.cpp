@@ -36,6 +36,17 @@ static enum {
 	STATE_PLAYING
 } state;
 
+static Player * get_or_create_plajur(int id) {
+	if(id != me->id && id < NUM_PLAYERS) {
+		Player * p = players[id];
+		if(p == NULL)
+			p = create_player("PLAJUR", id);
+		return p;
+	} else {
+		return NULL;
+	}
+}
+
 void init_network() {
 
 	state = STATE_INIT;
@@ -121,40 +132,30 @@ void network() {
 						} else if(CMD("mov")) {
 							int id;
 							sscanf(data, "mov %d", &id);
-							if(id != me->id && id < NUM_PLAYERS) {
-								Player * p = players[id];
-								if(p == NULL)
-									p = create_player("PLAJUR", id);
+							Player * p = get_or_create_plajur(id);
+							if(p != NULL) {
 								sscanf(data, "mov %d %f %f %f %d %f %f %f",&id, &p->pos.x, &p->pos.y, &p->angle, &p->current_base_texture, &p->dx, &p->dy, &p->da);
-								
 							}
 						} else if(CMD("rot")) {
 							int id;
 							sscanf(data, "rot %d", &id);
-							if(id != me->id && id < NUM_PLAYERS) {
-								Player * p = players[id];
-								if(p == NULL)
-									p = create_player("PLAJUR", id);
+							Player * p = get_or_create_plajur(id);
+							if(p != NULL) {
 								sscanf(data, "rot %d %f %f",&id, &p->angle, &p->da);
-								
 							}
 						} else if(CMD("fir")) {
 							int id;
 							sscanf(data, "fir %d", &id);
+							Player * p = get_or_create_plajur(id);
 							if(id != me->id && id < NUM_PLAYERS) {
-								Player * p = players[id];
-								if(p == NULL)
-									p = create_player("PLAJUR", id);
-								sscanf(data, "fir %d %f %f",&id, &p->fire_end.x, &p->fire_end.y);
 								p->fire = true;
 							}
 						} else if(CMD("nof")) {
 							int id;
 							sscanf(data, "nof %d", &id);
-							if(id != me->id && id < NUM_PLAYERS) {
-								Player * p = players[id];
-								if(p!=NULL)
-									p->fire = false;
+							Player * p = players[id];
+							if(id != me->id && p!=NULL) {
+								p->fire = false;
 							}
 						}
 						break;

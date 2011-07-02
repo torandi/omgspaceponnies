@@ -68,8 +68,7 @@ void logic(double dt) {
 	}
 
 	if(me->fire) {
-		me->fire_end.x = me->pos.x + 300*cos(me->angle);
-		me->fire_end.y = me->pos.y + 300*sin(me->angle);
+		me->calc_fire(true);
 	}
 
 
@@ -101,7 +100,7 @@ void logic(double dt) {
 		}
 
 		if(me->fire) {
-			sprintf(buffer, "omg fir %i %f %f", me->id, me->fire_end.x, me->fire_end.y);
+			sprintf(buffer, "omg fir %i", me->id);
 			send_msg(buffer);
 			has_sent_no_fire = false;
 		} else if(!has_sent_no_fire) {

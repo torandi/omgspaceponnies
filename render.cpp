@@ -1,5 +1,6 @@
 #include "render.h"
 #include "common.h"
+#include "player.h"
 #include <GL/gl.h>
 #include <SDL/SDL.h>
 #include "texture.h"
@@ -7,11 +8,13 @@
 
 #define ANIM_MAX 0
 
+GLfloat rbcolors[12][3]=				// Rainbow Of Colors
+{
+{1.0f,0.5f,0.5f},{1.0f,0.75f,0.5f},{1.0f,1.0f,0.5f},{0.75f,1.0f,0.5f},
+{0.5f,1.0f,0.5f},{0.5f,1.0f,0.75f},{0.5f,1.0f,1.0f},{0.5f,0.75f,1.0f},
+{0.5f,0.5f,1.0f},{0.75f,0.5f,1.0f},{1.0f,0.5f,1.0f},{1.0f,0.5f,0.75f}
+};
 
-#define PLAYER_W 32
-#define PLAYER_H 50
-
-static float radians_to_degrees(double rad);
 static void glCircle3i(GLint x, GLint y, GLint radius);
 
 static struct {
@@ -19,14 +22,6 @@ static struct {
   float h;
 } window;
 
-static struct animation_t {
-  Texture* texture;
-  unsigned int frames;
-  unsigned int current;
-  float delay;
-  float s;
-  float acc;
-} animation[ANIM_MAX];
 
 animation_t load_anim(const char* filename, unsigned int frames, unsigned int fps){
   animation_t tmp;
@@ -39,13 +34,23 @@ animation_t load_anim(const char* filename, unsigned int frames, unsigned int fp
   return tmp;
 }
 
-//Rainbow colors
-static GLfloat rbcolors[12][3]=				// Rainbow Of Colors
-{
-{1.0f,0.5f,0.5f},{1.0f,0.75f,0.5f},{1.0f,1.0f,0.5f},{0.75f,1.0f,0.5f},
-{0.5f,1.0f,0.5f},{0.5f,1.0f,0.75f},{0.5f,1.0f,1.0f},{0.5f,0.75f,1.0f},
-{0.5f,0.5f,1.0f},{0.75f,0.5f,1.0f},{1.0f,0.5f,1.0f},{1.0f,0.5f,0.75f}
-};
+Texture::texcoord_t prepare_animation(animation_t * anim, double dt) {
+	anim->texture->bind();
+	const unsigned int index = (int)(anim->s * anim->frames);
+	Texture::texcoord_t tc = anim->texture->index_to_texcoord(index);
+	anim->acc = fmod(anim->acc + dt, anim->delay);
+	anim->s = anim->acc / anim->delay;
+	return tc;
+    /*vertices[ 0] = tc.a[0];
+    vertices[ 1] = 1-tc.a[1];
+    vertices[ 5] = tc.b[0];
+    vertices[ 6] = 1-tc.b[1];
+    vertices[10] = tc.c[0];
+    vertices[11] = 1-tc.c[1];
+    vertices[15] = tc.d[0];
+    vertices[16] = 1-tc.d[1];*/
+}
+
 
 void render_init(int w, int h, bool fullscreen){
   /* create window */
@@ -68,7 +73,7 @@ void render_init(int w, int h, bool fullscreen){
   window.h = h;
 
   /* setup opengl */
-  glClearColor(0,0,0,0);
+  glClearColor(1,1,0,0);
   glEnable(GL_TEXTURE_2D);
   glEnable(GL_BLEND);
   glEnable(GL_LINE_SMOOTH);
@@ -84,75 +89,20 @@ void render(double dt){
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	bool render = true;
-	animation_t* anim = NULL;
 
-
-
-	glMatrixMode(GL_MODELVIEW);
-
-	glPushMatrix();
-
-
-	glTranslatef(me.pos.x, me.pos.y, 0);
-
-	glRotatef(radians_to_degrees(me.angle+PI/2.0), 0, 0, 1.0);
-
-	glTranslatef(-PLAYER_W/2.0,-PLAYER_H/2.0,0);
-
-	glDisable(GL_TEXTURE_2D);
-	glColor3f(1,1,1);
-
-	glBegin(GL_QUADS);
-		glVertex2f(0,0);
-		glVertex2f(PLAYER_W,0);
-		glVertex2f(PLAYER_W,PLAYER_H);
-		glVertex2f(0,PLAYER_H);
-	glEnd();
-
-	glPopMatrix();
-	
-	glMatrixMode(GL_PROJECTION);
-
-	glColor3f(1,0,0);
-	glPointSize(5);
-	glBegin(GL_POINTS);
-		glVertex2f(me.pos.x,me.pos.y);
-	glEnd();
-
-	glColor3f(1,0,1);
-	glBegin(GL_LINES);
-		glVertex2f(me.pos.x, me.pos.y);
-		glVertex2f(mouse.x, mouse.y);
-	glEnd();
-
-	if(me.fire) {
-		glBegin(GL_LINES);
-			glLineWidth(1);
-			for(int i=0;i<12;++i) {
-				float dx = i*cos(me.angle+PI/2.0) - 6*cos(me.angle+PI/2.0) + cos(me.angle)*PLAYER_H/2.0;
-				float dy = i*sin(me.angle+PI/2.0) - 6*sin(me.angle+PI/2.0) + sin(me.angle)*PLAYER_H/2.0;
-				glColor3f(rbcolors[i][0],rbcolors[i][1],rbcolors[i][2]);
-
-				glVertex2f(me.pos.x+dx, me.pos.y+dy);
-				glVertex2f(me.fire_end.x+dx, me.fire_end.y+dy);
-				glVertex2f(me.pos.x+dx, me.pos.y+dy);
-				//glVertex2f(me.pos.x+cos(me.angle)*PLAYER_H*0.3,me.pos.y+sin(me.angle)*PLAYER_H*0.3);
-				glVertex2f(me.pos.x,me.pos.y);
-			}
-		glEnd();
-		glLineWidth(1.0f);
+	for(int i=0; i < 4; ++i) {
+		if(players[i] != NULL) {
+			players[i]->render(dt);
+		}
 	}
 
 	SDL_GL_SwapBuffers();
 
   /*
-    anim->texture->bind();
-    const unsigned int index = (int)(anim->s * anim->frames);
-    Texture::texcoord_t tc = anim->texture->index_to_texcoord(index);
 	*/
 }
 
-static float radians_to_degrees(double rad) {
+float radians_to_degrees(double rad) {
 	return (float) (rad * (180/PI));
 }
 

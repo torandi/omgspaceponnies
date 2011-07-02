@@ -1,10 +1,11 @@
-OBJS = main.o render.o network.o texture.o resource.o player.o logic.o
+OBJS = main.o render.o network.o texture.o resource.o player.o logic.o render_object.o
+SPRITES = dispencer.png tail.png
 CFLAGS += -Wall `sdl-config --cflags`
 LDFLAGS += `sdl-config --libs`  -lGL -lSDL_image
 
 all: omgspaceponies
 
-omgspaceponies: $(OBJS)
+omgspaceponies: $(OBJS) $(SPRITES)
 	$(CXX) $(OBJS) $(LDFLAGS) -o $@
 
 clean:
@@ -16,3 +17,9 @@ clean:
 
 -include $(OBJS:.o=.d)
 
+dispencer.png: $(wildcard gfx_parts/player1/dispencer_*.png)
+	./makesprite gfx/player1/dispencer.png
+	
+
+tail.png: $(wildcard gfx_parts/player1/tail_*.png)
+	./makesprite gfx/player1/tail.png

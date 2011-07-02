@@ -20,16 +20,14 @@ int verbose_flag = 0;
 FILE* verbose = NULL;
 int port = PORT;
 
-std::vector<Player> players;
+Player * players[4] = {NULL, NULL, NULL, NULL};
 
-Player me;
+Player * me = NULL; 
 
 vector_t mouse;
 
 static void setup(){
-	me.nick = "PLAJUR N";
-	me.spawn();
-	render_init(800, 600, false);
+	render_init(1024, 768, false);
 	init_network();
 }
 
@@ -38,18 +36,17 @@ static void cleanup(){
 }
 
 static void poll(bool* run){
-	static int last = 0;
 
 	SDL_Event event;
 	while ( SDL_PollEvent(&event) ){
 		switch (event.type){
 		case SDL_MOUSEBUTTONDOWN:
 			if(event.button.button == 1)
-				me.fire = true;
+				me->fire = true;
 			break;
 		case SDL_MOUSEBUTTONUP:
 			if(event.button.button == 1)
-				me.fire = false;
+				me->fire = false;
 			break;
 
 		case SDL_MOUSEMOTION:
@@ -125,6 +122,8 @@ int main(int argc, char* argv[]){
 
   setup();
   
+	me = create_player("PLAYUR ONE", 1); 
+
   bool run = true;
   struct timeval ref;
   gettimeofday(&ref, NULL);

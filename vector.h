@@ -1,6 +1,8 @@
 #ifndef VECTOR_H
 #define VECTOR_H
 
+#include <math.h>
+
 struct vector_t {
   float x;
   float y;
@@ -24,6 +26,10 @@ struct vector_t {
 
   vector_t operator-(const vector_t& rhs) const {
     return vector_t(x - rhs.x, y - rhs.y);
+  }
+
+  float norm() {
+		return sqrt(x*x+y*y);
   }
 };
 

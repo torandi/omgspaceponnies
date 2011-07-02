@@ -1,8 +1,9 @@
 #ifndef LOGIC_H
 #define LOGIC_H
 
-void logic(double dt);
+#include "player.h"
 
-#define SPEED 200
+void logic(double dt);
+Player * create_player(char * nick, int id);
 
 #endif

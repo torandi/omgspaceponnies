@@ -28,6 +28,12 @@ struct vector_t {
     return vector_t(x - rhs.x, y - rhs.y);
   }
 
+  vector_t &operator=(const vector_t &other) {
+	x = other.x;
+	y = other.y;
+	return *(this);
+  }
+
   float norm() {
 		return sqrt(x*x+y*y);
   }

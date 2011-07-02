@@ -23,10 +23,7 @@ static void glCircle3i(GLint x, GLint y, GLint radius);
 
 static int next_wall_color = 0;
 
-static struct {
-  float w;
-  float h;
-} window;
+window_t window;
 
 static RenderObject splash;
 static RenderObject box;
@@ -99,9 +96,12 @@ void render_splash() {
 void render(double dt){
 	glClear(GL_COLOR_BUFFER_BIT);
 
+	
+
+
 	glPushMatrix();
 
-	glTranslatef(-window.w/2.0, -window.h/2.0, 0);
+	glTranslatef(-window.w*0.28+(window.w/2.0-me->pos.x)*0.2,-window.h*0.28+ (window.h/2.0-me->pos.y)*0.2, 0);
 	
 	texture_colors[0] = 1;
 	texture_colors[1] = 0.3;
@@ -111,9 +111,15 @@ void render(double dt){
 
 	glPopMatrix();
 
+	glPushMatrix();
+
+	//Center on player
+	glTranslatef(window.w/2.0-me->pos.x, window.h/2.0-me->pos.y,0);
+
 	for(int i=0; i < NUM_PLAYERS; ++i) {
-		if(players[i] != NULL) {
+		if(players[i] != NULL && players[i]->dead == 0) {
 			players[i]->render(dt);
+			#ifdef SHOW_DOTS
 	float ax, ay, hyp;
 	hyp = vector_t(PLAYER_W/2.0,PLAYER_H/2.0).norm();
 	ax = abs((PLAYER_H/2.0) * cos(players[i]->angle)) + abs((PLAYER_W/2.0)*sin(players[i]->angle));
@@ -128,6 +134,7 @@ void render(double dt){
 		glVertex2f(players[i]->pos.x,players[i]->pos.y-ay);
 	glEnd();
 	glEnable(GL_TEXTURE_2D);
+	#endif
 		}
 	}
 
@@ -144,6 +151,7 @@ void render(double dt){
 		}
 	}
 
+	glPopMatrix();
 
 	SDL_GL_SwapBuffers();
 }

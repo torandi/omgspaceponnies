@@ -29,4 +29,11 @@ float radians_to_degrees(double rad);
 extern GLfloat rbcolors[12][3];				// Rainbow Of Colors
 extern float texture_colors[3];
 
+struct window_t {
+  float w;
+  float h;
+};
+
+extern window_t window;
+
 #endif /* render_H */

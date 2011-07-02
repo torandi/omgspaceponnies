@@ -1,0 +1,7 @@
+#!/bin/bash
+file=`echo $1 | sed -e 's/.*\/\(.*\)\.png/\1_/'`
+org=$1
+if [ -e $1 ]; then
+	rm $org
+fi
+montage `ls gfx_parts/$file[0-9][0-9].png` -tile x1 -background transparent -geometry 84x132+0+0 $org

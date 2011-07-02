@@ -57,8 +57,8 @@ static void poll(bool* run){
 					break;
 
 				case SDL_MOUSEMOTION:
-					mouse.x = event.motion.x;
-					mouse.y = event.motion.y;
+					mouse.x = event.motion.x - (window.w/2.0-me->pos.x);
+					mouse.y = event.motion.y - (window.h/2.0-me->pos.y);
 					break;
 
 				case SDL_KEYDOWN:

@@ -1,6 +1,7 @@
 #include "player.h"
 #include "common.h"
 #include "render.h"
+#include "level.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -25,7 +26,7 @@ void Player::init(int _id) {
 	power = 1.0;
 	fire = false;
 	id = _id;
-	dead = false;
+	dead = 0;
 
 	dx = 0;
 	dy = 0;
@@ -66,10 +67,10 @@ void Player::init(int _id) {
 
 
 void Player::spawn() {
-	pos.x = rand() % 600;
-	pos.y = rand() % 800;
+	pos.x = spawn_pos[id][0]*64;
+	pos.y = spawn_pos[id][1]*64;
+	dead = 0;
 
-	printf("Spawned %s at (%f, %f)\n", nick.c_str(), pos.x, pos.y);
 }
 
 void Player::dash() {
@@ -105,18 +106,18 @@ void Player::render(double dt) {
 
 	glDisable(GL_TEXTURE_2D);
 
+/*
 	glColor3f(1,0,0);
 	glPointSize(5);
 	glBegin(GL_POINTS);
 		glVertex2f(pos.x,pos.y);
 	glEnd();
-
 	glColor3f(1,0,1);
 	glBegin(GL_LINES);
 		glVertex2f(pos.x, pos.y);
 		glVertex2f(mouse.x, mouse.y);
 	glEnd();
-
+*/
 	if(fire) {
 		glLineWidth(2.0f);
 		glBegin(GL_LINES);
@@ -145,10 +146,46 @@ void Player::logic(double dt) {
 	if(fire) {
 		calc_fire(false);
 	}
+
+	if(dead > 0) {
+		++dead;
+		if(dead > RESPAWN_TIME)
+			spawn();
+	}
 }
 
 void Player::calc_fire(bool detect_kill) {
-	fire_end.x = pos.x + 300*cos(angle);
-	fire_end.y = pos.y + 300*sin(angle);
-}
+	//fire_end.x = ((pos.x/64)+1)*64;
+	//fire_end.y = ((pos.y/64)+1)*64;
+	fire_end = pos;
+	int len = 0;
+	while(len < MAX_FIRE_LENGHT) {
+		len += 32;
+		vector_t prev(fire_end);
+		fire_end.x+= 32*cos(angle);
+		fire_end.y+= 32*sin(angle);
 
+		for(int i=0; i < NUM_PLAYERS; ++i) {
+			if(i != id && players[i] != NULL && players[i]->dead == 0) {
+				vector_t d;
+				d.x = fire_end.x - players[i]->pos.x;
+				d.y = fire_end.y - players[i]->pos.y;
+				if(d.norm() < PLAYER_W/2.0)  {
+					players[i]->dead = 1;
+					printf("Killed player %i\n", i);
+					char buffer[128];
+					sprintf(buffer, "omg kil %i", i);
+				}
+			}
+
+		int mx, my;
+		calc_map_index(fire_end, mx, my);
+		if(map_value(mx, my) > 0) {
+			fire_end = prev;
+			//map[my][mx]+=10;
+			break;
+		}
+	}
+ }
+
+}

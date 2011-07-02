@@ -167,6 +167,13 @@ void network() {
 							if(id != me->id && p!=NULL) {
 								p->fire = false;
 							}
+						} else if(CMD("kil")) {
+							int id;
+							sscanf(data, "kil %d", &id);
+							Player * p = players[id];
+							if(p!=NULL) {
+								p->dead = 1;
+							}
 						}
 						break;
 				}

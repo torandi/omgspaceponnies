@@ -13,7 +13,7 @@
 
 #define PI 3.14159265
 
-#define SPEED 200.0f
+#define SPEED 300.0f
 
 #define NUM_PLAYERS 4
 

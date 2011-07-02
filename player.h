@@ -5,6 +5,10 @@
 #include "render_object.h"
 #include <string>
 
+#define MAX_FIRE_LENGHT 1024
+
+#define RESPAWN_TIME 60
+
 enum texture_t {
 	TEXTURE_BASE,
 	TEXTURE_DASH,
@@ -24,7 +28,9 @@ struct Player {
 
 	vector_t fire_end;
 
-	bool dashing, fire, dead;
+	bool dashing, fire;
+
+	int dead;
 
 	int id;
 

@@ -28,7 +28,7 @@ static fd_set readset;
 static struct timeval tv;
 
 static int requested_slot = -1;
-static unsigned long request_sent_time;
+static double request_sent_time;
 
 static enum {
 	STATE_INIT,
@@ -90,6 +90,7 @@ void network() {
 
 	if(select(sockfd+1,&readset,NULL,NULL,&tv) > 0) {
 		size = recvfrom(sockfd, buffer, 1024, 0, &src_addr, &addrlen);
+		printf(">> %s\n", buffer);
 		if(strncmp(buffer,"omg ",4)==0) {
 				char * data = buffer+4;
 				switch(state) {
@@ -116,6 +117,26 @@ void network() {
 							if(me != NULL && me->id == slot) {
 								sprintf(buffer, "omg nak %i", slot);
 								send_msg(buffer);
+							}
+						} else if(CMD("mov")) {
+							int id;
+							sscanf(data, "mov %d", &id);
+							if(id != me->id && id < NUM_PLAYERS) {
+								Player * p = players[id];
+								if(p == NULL)
+									p = create_player("PLAJUR", id);
+								sscanf(data, "mov %d %f %f %f %d %f %f %f",&id, &p->pos.x, &p->pos.y, &p->angle, &p->current_base_texture, &p->dx, &p->dy, &p->da);
+								
+							}
+						} else if(CMD("rot")) {
+							int id;
+							sscanf(data, "rot %d", &id);
+							if(id != me->id && id < NUM_PLAYERS) {
+								Player * p = players[id];
+								if(p == NULL)
+									p = create_player("PLAJUR", id);
+								sscanf(data, "rot %d %f %f",&id, &p->angle, &p->da);
+								
 							}
 						}
 						break;

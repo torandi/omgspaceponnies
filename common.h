@@ -15,6 +15,8 @@
 
 #define SPEED 200.0f
 
+#define NUM_PLAYERS 4
+
 
 //Forward declaration of Player
 
@@ -46,5 +48,5 @@ extern bool ready;
 
 extern char * myname;
 
-unsigned long curtime();
+double curtime();
 #endif /* COMMON_H */

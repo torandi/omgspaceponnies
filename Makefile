@@ -1,6 +1,6 @@
 OBJS = main.o render.o network.o texture.o resource.o player.o logic.o render_object.o
 SPRITES = dispencer.png tail.png
-CFLAGS += -Wall `sdl-config --cflags`
+CFLAGS += -Wall `sdl-config --cflags` -g
 LDFLAGS += `sdl-config --libs`  -lGL -lSDL_image
 
 all: omgspaceponies

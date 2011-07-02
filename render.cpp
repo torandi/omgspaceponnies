@@ -107,9 +107,6 @@ void render(double dt){
 	}
 
 	SDL_GL_SwapBuffers();
-
-  /*
-	*/
 }
 
 float radians_to_degrees(double rad) {

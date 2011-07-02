@@ -27,6 +27,9 @@ void Player::init(int _id) {
 	id = _id;
 	dead = false;
 
+	dx = 0;
+	dy = 0;
+
 	current_base_texture = TEXTURE_BASE;
 
 	char texture[64];
@@ -132,4 +135,10 @@ void Player::render(double dt) {
 	}
 
 	glEnable(GL_TEXTURE_2D);
+}
+
+void Player::logic(double dt) {
+	pos.x += dt*dx;
+	pos.y += dt*dy;
+	angle += dt*da;
 }

@@ -20,6 +20,8 @@ struct Player {
 	vector_t target;
 	unsigned long dash_start;
 
+	float dx, dy, da;
+
 	vector_t fire_end;
 
 	bool dashing, fire, dead;
@@ -47,6 +49,7 @@ struct Player {
 
 	void render(double dt);
 
+	void logic(double dt);
 private:
 	void init(int _id);
 };

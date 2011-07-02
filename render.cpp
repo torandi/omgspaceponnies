@@ -39,6 +39,14 @@ animation_t load_anim(const char* filename, unsigned int frames, unsigned int fp
   return tmp;
 }
 
+//Rainbow colors
+static GLfloat rbcolors[12][3]=				// Rainbow Of Colors
+{
+{1.0f,0.5f,0.5f},{1.0f,0.75f,0.5f},{1.0f,1.0f,0.5f},{0.75f,1.0f,0.5f},
+{0.5f,1.0f,0.5f},{0.5f,1.0f,0.75f},{0.5f,1.0f,1.0f},{0.5f,0.75f,1.0f},
+{0.5f,0.5f,1.0f},{0.75f,0.5f,1.0f},{1.0f,0.5f,1.0f},{1.0f,0.5f,0.75f}
+};
+
 void render_init(int w, int h, bool fullscreen){
   /* create window */
   SDL_Init(SDL_INIT_VIDEO);
@@ -63,6 +71,8 @@ void render_init(int w, int h, bool fullscreen){
   glClearColor(0,0,0,0);
   glEnable(GL_TEXTURE_2D);
   glEnable(GL_BLEND);
+  glEnable(GL_LINE_SMOOTH);
+  glHint(GL_LINE_SMOOTH_HINT, GL_DONT_CARE);
   glShadeModel(GL_FLAT);
   glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -116,12 +126,21 @@ void render(double dt){
 	glEnd();
 
 	if(me.fire) {
-		glColor3f(0,0,1);
-		glLineWidth(5.0f);
 		glBegin(GL_LINES);
-			glVertex2f(me.pos.x, me.pos.y);
-			glVertex2f(me.fire_end.x, me.fire_end.y);
+			glLineWidth(1);
+			for(int i=0;i<12;++i) {
+				float dx = i*cos(me.angle+PI/2.0) - 6*cos(me.angle+PI/2.0) + cos(me.angle)*PLAYER_H/2.0;
+				float dy = i*sin(me.angle+PI/2.0) - 6*sin(me.angle+PI/2.0) + sin(me.angle)*PLAYER_H/2.0;
+				glColor3f(rbcolors[i][0],rbcolors[i][1],rbcolors[i][2]);
+
+				glVertex2f(me.pos.x+dx, me.pos.y+dy);
+				glVertex2f(me.fire_end.x+dx, me.fire_end.y+dy);
+				glVertex2f(me.pos.x+dx, me.pos.y+dy);
+				//glVertex2f(me.pos.x+cos(me.angle)*PLAYER_H*0.3,me.pos.y+sin(me.angle)*PLAYER_H*0.3);
+				glVertex2f(me.pos.x,me.pos.y);
+			}
 		glEnd();
+		glLineWidth(1.0f);
 	}
 
 	SDL_GL_SwapBuffers();

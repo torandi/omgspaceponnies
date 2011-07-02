@@ -3,6 +3,6 @@
 
 void logic(double dt);
 
-#define DASH_SPEED 200
+#define SPEED 200
 
 #endif

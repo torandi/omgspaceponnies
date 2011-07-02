@@ -15,6 +15,7 @@ static double last_send=0;
 
 static bool has_sent_still = false;
 static bool has_sent_no_rot = false;
+static bool has_sent_no_fire = true;
 
 void logic(double dt) {
 	double s = SPEED * dt;
@@ -81,7 +82,7 @@ void logic(double dt) {
 		delta.x/=dt;
 		delta.y/=dt;
 
-		if(delta.norm() > 1) {
+		if(delta.norm() > 1 || me->fire) {
 				sprintf(buffer, "omg mov %i %f %f %f %i %f %f %f", me->id, me->pos.x, me->pos.y, me->angle, me->current_base_texture, delta.x, delta.y, da);
 			send_msg(buffer);
 			has_sent_still = false;
@@ -102,6 +103,11 @@ void logic(double dt) {
 		if(me->fire) {
 			sprintf(buffer, "omg fir %i %f %f", me->id, me->fire_end.x, me->fire_end.y);
 			send_msg(buffer);
+			has_sent_no_fire = false;
+		} else if(!has_sent_no_fire) {
+			sprintf(buffer, "omg nof %i", me->id);
+			send_msg(buffer);
+			has_sent_no_fire = false;
 		}
 			
 		last_send = curtime();

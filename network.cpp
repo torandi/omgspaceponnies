@@ -138,6 +138,24 @@ void network() {
 								sscanf(data, "rot %d %f %f",&id, &p->angle, &p->da);
 								
 							}
+						} else if(CMD("fir")) {
+							int id;
+							sscanf(data, "fir %d", &id);
+							if(id != me->id && id < NUM_PLAYERS) {
+								Player * p = players[id];
+								if(p == NULL)
+									p = create_player("PLAJUR", id);
+								sscanf(data, "fir %d %f %f",&id, &p->fire_end.x, &p->fire_end.y);
+								p->fire = true;
+							}
+						} else if(CMD("nof")) {
+							int id;
+							sscanf(data, "nof %d", &id);
+							if(id != me->id && id < NUM_PLAYERS) {
+								Player * p = players[id];
+								if(p!=NULL)
+									p->fire = false;
+							}
 						}
 						break;
 				}

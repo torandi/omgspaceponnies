@@ -131,12 +131,7 @@ int main(int argc, char* argv[]){
 	}
   }
 
-	if(argc - optind != 1) {
-		show_usage();
-		exit(1);
-	}
-
-	myname = argv[optind++];
+	myname = "PLAJUR";
 
   /* verbose dst */
   if ( verbose_flag ){

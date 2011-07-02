@@ -1,16 +1,16 @@
-OBJS = main.o render.o network.o
+OBJS = main.o render.o network.o texture.o resource.o player.o
 CFLAGS += -Wall `sdl-config --cflags`
-LDFLAGS += `sdl-config --libs`  -lGL
+LDFLAGS += `sdl-config --libs`  -lGL -lSDL_image
 
 all: omgspaceponies
 
-wandercat: $(OBJS)
+omgspaceponies: $(OBJS)
 	$(CXX) $(OBJS) $(LDFLAGS) -o $@
 
-	clean:
+clean:
 	rm -rf *.o omgspaceponies 
 
-	%.o : %.cpp
+%.o : %.cpp
 	@$(CXX) -MM $(CFLAGS) $< > $*.d
 	$(CXX) $(CFLAGS) -c $< -o $@
 

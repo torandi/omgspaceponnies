@@ -3,6 +3,10 @@
 
 #include <cstdio>
 #include <stdint.h>
+#include <vector>
+#include "player.h"
+
+#define PORT 7412
 
 /**
  * Current animation step.
@@ -17,5 +21,11 @@ extern int port;
 
 
 extern FILE* verbose;
+
+extern std::vector<Player> players;
+
+extern Player me;
+
+extern vector_t mouse;
 
 #endif /* COMMON_H */

@@ -3,6 +3,13 @@
 #include <unistd.h>
 #include <SDL/SDL.h>
 #include <getopt.h>
+#include <vector>
+
+#include "common.h"
+#include "network.h"
+#include "render.h"
+
+
 
 #define REF_FPS 30
 #define REF_DT (1.0/REF_FPS)
@@ -11,11 +18,18 @@ float step = 0.0f;
 int verbose_flag = 0;
 FILE* verbose = NULL;
 int port = PORT;
-static bool fullscreen = false;
+
+std::vector<Player> players;
+
+Player me;
+
+vector_t mouse;
 
 static void setup(){
-  render_init(800, 600, fullscreen);
-  init_network();
+	me.nick = "PLAJUR N";
+	me.spawn();
+	render_init(800, 600, false);
+	init_network();
 }
 
 static void cleanup(){
@@ -29,14 +43,11 @@ static void poll(bool* run){
 	while ( SDL_PollEvent(&event) ){
 		switch (event.type){
 		case SDL_MOUSEBUTTONDOWN:
-			{
-				int n = SDL_GetTicks();
-				if ( n - last < 200 ){
-					fullscreen = !fullscreen;
-					render_init(800, 600, fullscreen);
-				}
-				last = n;
-			}
+			break;
+
+		case SDL_MOUSEMOTION:
+			mouse.x = event.motion.x;
+			mouse.y = event.motion.y;
 			break;
 
 		case SDL_QUIT:
@@ -58,7 +69,7 @@ int main(int argc, char* argv[]){
   {
 		{"port",    required_argument, 0, 'p' },
 		{"help",    no_argument,       0, 'h'},
-		{"verbose",    no_argument,      &vebose_flag, 'v'},
+		{"verbose",    no_argument,      &verbose_flag, 'v'},
 		{0, 0, 0, 0}
   };
 
@@ -81,17 +92,14 @@ int main(int argc, char* argv[]){
 	}
   }
 
-  if ( argc - optind != 2 ){
-	show_usage();
-    exit(1);
-  }
-
   /* verbose dst */
   if ( verbose_flag ){
 	  verbose = stdout;
   } else {
 	  verbose = fopen("/dev/null","w");
   }
+
+	srand(time(NULL));
 
   setup();
   

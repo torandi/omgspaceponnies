@@ -16,9 +16,6 @@
 
 /**
  * Protocol:
- * [3 chars cmd][space][optional parameters]
- * Cmds:
- * mov from_x from_y to_x to_y
  */
 
 static struct sockaddr_in broadcast_addr;
@@ -76,31 +73,8 @@ void network() {
 
 	if(select(sockfd+1,&readset,NULL,NULL,&tv) > 0) {
 		size = recvfrom(sockfd, buffer, 1024, 0, &src_addr, &addrlen);
-		if(size >= 3) {
-			if(CMD("mov")) {
-				sscanf(buffer,"mov %hi %hi %hi %hi",&pos_cat.x, &pos_cat.y, &pos_cat_next.x, &pos_cat_next.y);
-				printf("Network: cat moved (%hi, %hi) -> (%hi, %hi) [from %s]\n", pos_cat.x+1, pos_cat.y+1, pos_cat_next.x+1, pos_cat_next.y+1, inet_ntoa(((struct sockaddr_in*)&src_addr)->sin_addr));
-
-				if(pos_cat_next == pos_self) {
-					printf("Assuming ownership of cat\n");
-					//Ack server
-					sprintf(buffer, "ack %hi %hi",pos_self.x, pos_self.y);
-					//sendto(sockfd, buffer, strlen(buffer)+1, 0, (sockaddr*) &src_addr, addrlen);
-					sendto(sockfd, buffer, strlen(buffer)+1, 0, (sockaddr*) &broadcast_addr, sizeof(sockaddr_in));
-					owner = true;
-				}
-				frist = false;
-			} else if(CMD("ack")) {
-				pos_t pos;
-				sscanf(buffer,"ack %hi %hi", &pos.x, &pos.y);
-				if(pos == pos_cat_next && pos != pos_self) {
-					printf("We lost the cat!\n");
-					owner = false;
-				} else if(pos != pos_self) {
-					printf("Recieved old ack: (%hi, %hi)\n", pos.x+1, pos.y+1);
-				}
-
-			}
+		if(size < 3) {
+			
 		} else {
 			buffer[size] = 0;
 			fprintf(stderr,"Recieved invalid data: %s\n", buffer);
@@ -108,9 +82,8 @@ void network() {
 	}
 }
 
-void send_cat() {
-	char buffer[1024];
-	sprintf(buffer, "mov %hi %hi %hi %hi",pos_cat.x, pos_cat.y, pos_cat_next.x, pos_cat_next.y);
-	sendto(sockfd, buffer, strlen(buffer)+1, 0, (sockaddr*) &broadcast_addr, sizeof(sockaddr_in));
-	printf("Sending cat: %s\n", buffer);
+void send_msg(const char * buffer) {
+	if(sendto(sockfd, buffer, strlen(buffer)+1, 0, (sockaddr*) &broadcast_addr, sizeof(sockaddr_in))<0) {
+		perror("Falid to send massage");
+	}
 }

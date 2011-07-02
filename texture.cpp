@@ -1,7 +1,7 @@
 #include "texture.h"
 
-#include <SDL.h>
-#include <SDL_image.h>
+#include <SDL/SDL.h>
+#include <SDL/SDL_image.h>
 #include <GL/gl.h>
 #include <cassert>
 

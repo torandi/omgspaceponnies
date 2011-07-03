@@ -49,8 +49,8 @@ void logic(double dt) {
 		}
 
 		if(me->dashing) {
-			float dx = s * cos(dash_angle);
-			float dy = s * sin(dash_angle);
+			float dx = s * cos(dash_angle) * 2.2;
+			float dy = s * sin(dash_angle) * 2.2;
 			me->pos.x += dx;
 			me->pos.y += dy;
 
@@ -75,45 +75,61 @@ void logic(double dt) {
 			me->current_base_texture = TEXTURE_RIGHT;
 		}
 
+		if(keys[SDLK_w] || keys[SDLK_COMMA]) {
+			me->pos.x += s * cos(me->angle);
+			me->pos.y += s * sin(me->angle);
+			me->current_base_texture = TEXTURE_DASH;
+		}
+
+
+		if(keys[SDLK_o] || keys[SDLK_s]) {
+			me->pos.x += s * cos(me->angle+PI);
+			me->pos.y += s * sin(me->angle+PI);
+		}
+
+		bool loop = false;
+		float da=me->angle - last_a;
+		vector_t diff = me->pos - last;
+		int l = 10;
+		do {
+			loop = false;
+			int mx, my;
+			float ax, ay;
+
+			ax = abs((PLAYER_H/2.1) * cos(me->angle)) + abs((PLAYER_W/2.1)*sin(me->angle));
+			ay = abs((PLAYER_W/2.1) * cos(me->angle)) + abs((PLAYER_H/2.1)*sin(me->angle));
+			calc_map_index(vector_t(me->pos.x-ax,me->pos.y), mx, my);
+			if(map_value(mx, my)>0) {
+				goto collision;
+			}
+			calc_map_index(vector_t(me->pos.x+ax,me->pos.y), mx, my);
+			if(map_value(mx, my)>0) {
+				goto collision;
+			}
+			calc_map_index(vector_t(me->pos.x,me->pos.y+ay), mx, my);
+			if(map_value(mx, my)>0) {
+				goto collision;
+			}
+			calc_map_index(vector_t(me->pos.x,me->pos.y-ay), mx, my);
+			if(map_value(mx, my)>0) {
+				goto collision;
+			}
+			break;
+
+			collision:
+				me->pos.x -= diff.x;
+				me->pos.y -= diff.y;
+				me->angle -= da;
+				me->dashing = false;
+				loop = true;
+
+				--l;
+
+		} while(loop && l > 0);
+
 		if(me->fire) {
 			me->calc_fire(true);
 		}
-
-		int mx, my;
-		float ax, ay;
-		ax = abs((PLAYER_H/2.1) * cos(me->angle)) + abs((PLAYER_W/2.1)*sin(me->angle));
-		ay = abs((PLAYER_W/2.1) * cos(me->angle)) + abs((PLAYER_H/2.1)*sin(me->angle));
-		calc_map_index(vector_t(me->pos.x-ax,me->pos.y), mx, my);
-		if(map_value(mx, my)>0) {
-			me->pos = last;
-			me->angle = last_a;
-			me->dashing = false;
-			goto check_done;
-		}
-		calc_map_index(vector_t(me->pos.x+ax,me->pos.y), mx, my);
-		if(map_value(mx, my)>0) {
-			me->pos = last;
-			me->angle = last_a;
-			me->dashing = false;
-			goto check_done;
-		}
-		calc_map_index(vector_t(me->pos.x,me->pos.y+ay), mx, my);
-		if(map_value(mx, my)>0) {
-			me->pos = last;
-			me->angle = last_a;
-			me->dashing = false;
-			goto check_done;
-		}
-		calc_map_index(vector_t(me->pos.x,me->pos.y-ay), mx, my);
-		if(map_value(mx, my)>0) {
-			me->pos = last;
-			me->angle = last_a;
-			me->dashing = false;
-			goto check_done;
-		}
-
-
-		check_done:
 
 
 		if(last_send+SEND_DELAY < curtime()) {

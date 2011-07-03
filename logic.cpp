@@ -87,6 +87,7 @@ void logic(double dt) {
 			me->pos.y += s * sin(me->angle+PI);
 		}
 
+		//Collision detection:
 		bool loop = false;
 		float da=me->angle - last_a;
 		vector_t diff = me->pos - last;
@@ -114,11 +115,41 @@ void logic(double dt) {
 			if(map_value(mx, my)>0) {
 				goto collision;
 			}
+
+			//No collision - break;
 			break;
 
 			collision:
-				me->pos.x -= diff.x;
-				me->pos.y -= diff.y;
+				printf("Collision with block (%d, %d)\n", mx, my);
+				float bx_min, bx_max;
+				float by_min, by_max;
+				bx_min= mx*64-32;
+				bx_max = bx_min + 64;
+				by_min = my*64-32;
+				by_max = by_min+64;
+
+				float dx, dy;
+
+				dx = abs(mx*64-me->pos.x);
+				dy = abs(my*64-me->pos.y);
+			
+				if(by_min < me->pos.y && me->pos.y < by_max) {
+					printf("Mirror y\n");
+					me->pos.y -= diff.y * 2.0;
+				} else if(bx_min < me->pos.x && me->pos.y < bx_max) {
+					printf("Mirror x\n");
+					me->pos.x -= diff.x * 2.0;
+				} else if( dx < dy) {
+					printf("Mirror y-2\n");
+					me->pos.y -= diff.y * 2.0;
+				} else if( dx > dy) {
+					printf("Mirror x-2\n");
+					me->pos.x -= diff.x * 2.0;
+				} else {
+					printf("Mirror both\n");
+					me->pos = me->pos - diff*1.5;
+				}		
+				map[my][mx] = 2;
 				me->angle -= da;
 				me->dashing = false;
 				loop = true;

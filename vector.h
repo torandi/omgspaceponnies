@@ -34,6 +34,10 @@ struct vector_t {
 	return *(this);
   }
 
+  vector_t operator*(const float m) {
+	return vector_t(x*m, y*m);
+  }
+
   float norm() {
 		return sqrt(x*x+y*y);
   }

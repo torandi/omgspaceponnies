@@ -10,7 +10,7 @@
 
 char * msg;
 
-#define ANIM_MAX 0
+#define SHOW_DOTS
 
 GLfloat rbcolors[12][3]=				// Rainbow Of Colors
 {
@@ -103,11 +103,10 @@ void render(double dt){
 
 	glTranslatef(-window.w*0.28+(window.w/2.0-me->pos.x)*0.2,-window.h*0.28+ (window.h/2.0-me->pos.y)*0.2, 0);
 	
-	texture_colors[0] = 1;
 	texture_colors[1] = 0.3;
-	texture_colors[2] = 1;
 
 	backdrop.render(dt);
+	texture_colors[1] = 0.5;
 
 	glPopMatrix();
 

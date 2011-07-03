@@ -101,7 +101,7 @@ void network() {
 
 	if(select(sockfd+1,&readset,NULL,NULL,&tv) > 0) {
 		size = recvfrom(sockfd, buffer, 1024, 0, &src_addr, &addrlen);
-		printf(">> %s\n", buffer);
+		//printf(">> %s\n", buffer);
 		if(strncmp(buffer,"omg ",4)==0) {
 				char * data = buffer+4;
 				switch(state) {

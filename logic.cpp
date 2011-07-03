@@ -24,6 +24,12 @@ void logic(double dt) {
 	vector_t last = vector_t(me->pos);
 	float last_a = me->angle;
 
+	int mouse_x,mouse_y;
+	SDL_GetMouseState( &mouse_x, &mouse_y);
+	mouse.x = mouse_x - (window.w/2.0-me->pos.x);
+	mouse.y = mouse_y - (window.h/2.0-me->pos.y);
+					
+
 	if(me->dead == 0) {
 		me->current_base_texture = TEXTURE_BASE;
 

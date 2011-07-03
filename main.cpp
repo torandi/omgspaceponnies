@@ -20,6 +20,7 @@ float step = 0.0f;
 int verbose_flag = 0;
 FILE* verbose = NULL;
 int port = PORT;
+bool fullscreen = false;
 
 Player * players[4] = {NULL, NULL, NULL, NULL};
 
@@ -32,7 +33,7 @@ vector_t mouse;
 char * myname;
 
 static void setup(){
-	render_init(1024, 768, false);
+	render_init(1024, 768, fullscreen);
 	init_level();
 	init_network();
 }
@@ -54,11 +55,6 @@ static void poll(bool* run){
 				case SDL_MOUSEBUTTONUP:
 					if(event.button.button == 1)
 						me->fire = false;
-					break;
-
-				case SDL_MOUSEMOTION:
-					mouse.x = event.motion.x - (window.w/2.0-me->pos.x);
-					mouse.y = event.motion.y - (window.h/2.0-me->pos.y);
 					break;
 
 				case SDL_KEYDOWN:
@@ -110,6 +106,7 @@ int main(int argc, char* argv[]){
   {
 		{"port",    required_argument, 0, 'p' },
 		{"help",    no_argument,       0, 'h'},
+		{"fullscreen",    no_argument,       0, 'f'},
 		{"verbose",    no_argument,      &verbose_flag, 'v'},
 		{0, 0, 0, 0}
   };
@@ -117,13 +114,16 @@ int main(int argc, char* argv[]){
   int option_index = 0;
   int c;
 
-  while( (c=getopt_long(argc, argv, "p:hv", long_options, &option_index)) != -1 ) {
+  while( (c=getopt_long(argc, argv, "p:hfv", long_options, &option_index)) != -1 ) {
 	switch(c) {
 		case 0:
 			break;
 		case 'p':
 			port = atoi(optarg);
 			printf("Set port to %i\n", port);
+			break;
+		case 'f':
+			fullscreen= true;
 			break;
 		case 'h':
 			show_usage();

@@ -27,6 +27,8 @@ void Player::init(int _id) {
 	dead = 0;
 	da = 0;
 
+	shield_angle = PI;
+
 	velocity = vector_t(0.0f,0.0f);
 
 	current_base_texture = TEXTURE_BASE;
@@ -42,8 +44,11 @@ void Player::init(int _id) {
 
 	//Dash
 	sprintf(texture,"gfx/dash.png");
-	//TODO: Separate textures
-	textures[TEXTURE_FWD] = textures[TEXTURE_DASH] = RenderObject(texture, 1, 25, size);
+	textures[TEXTURE_DASH] = RenderObject(texture, 1, 25, size);
+
+	//Fwd
+	sprintf(texture,"gfx/fwd.png");
+	textures[TEXTURE_FWD] = RenderObject(texture, 1, 25, size);
 
 	//Left
 	sprintf(texture,"gfx/left.png");
@@ -62,6 +67,11 @@ void Player::init(int _id) {
 	sprintf(texture,"gfx/dispencer.png");
 	textures[TEXTURE_DISPENCER] = RenderObject(texture, 6, 25, size);
 
+	//Shield
+	sprintf(texture,"gfx/shield.png");
+	textures[TEXTURE_SHIELD] = RenderObject(texture, 1, 25, vector_t(200.0,200.0));
+	
+	
 }
 
 
@@ -74,6 +84,8 @@ void Player::spawn() {
 }
 
 void Player::render(double dt) {
+
+	texture_colors[1]=1;
 	glMatrixMode(GL_MODELVIEW);
 
 	glPushMatrix();
@@ -83,31 +95,34 @@ void Player::render(double dt) {
 	glTranslatef(-PLAYER_W*0.5,-PLAYER_H*0.5, 0);
 
 	//Draw textures:
+
 	textures[TEXTURE_BASE].render(dt);
+	textures[TEXTURE_TAIL].render(dt);
 	if(current_base_texture != TEXTURE_BASE)
 		textures[current_base_texture].render(dt);
-	textures[TEXTURE_TAIL].render(dt);
 	if(fire)
 		textures[TEXTURE_DISPENCER].render(dt);
 
 	glPopMatrix();
 
+
 	glMatrixMode(GL_PROJECTION);
 
+
+	glPushMatrix();
+	
+	glTranslatef(pos.x-textures[TEXTURE_SHIELD].size.x/2.0, pos.y-textures[TEXTURE_SHIELD].size.y/2.0,0);
+	textures[TEXTURE_SHIELD].render(dt);
+	
+	glPopMatrix();
+
+	texture_colors[1]=0.5;
+
+}
+
+void Player::render_fire(double dt) {
 	glDisable(GL_TEXTURE_2D);
 
-	/*
-		glColor3f(1,0,0);
-		glPointSize(5);
-		glBegin(GL_POINTS);
-		glVertex2f(pos.x,pos.y);
-		glEnd();
-		glColor3f(1,0,1);
-		glBegin(GL_LINES);
-		glVertex2f(pos.x, pos.y);
-		glVertex2f(mouse.x, mouse.y);
-		glEnd();
-	 */
 	if(fire) {
 		glLineWidth(2.0f);
 		glBegin(GL_LINES);

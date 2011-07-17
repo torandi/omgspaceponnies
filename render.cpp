@@ -21,6 +21,7 @@ GLfloat rbcolors[12][3]=				// Rainbow Of Colors
 };
 
 static void glCircle3i(GLint x, GLint y, GLint radius);
+static void render_walls(double dt);
 
 static int next_wall_color = 0;
 
@@ -97,15 +98,11 @@ void render_splash() {
 void render(double dt){
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	
-
-
 	glPushMatrix();
 
 	glTranslatef(-window.w*0.28+(window.w/2.0-me->pos.x)*0.2,-window.h*0.28+ (window.h/2.0-me->pos.y)*0.2, 0);
 	
 	texture_colors[1] = 0.3;
-
 	backdrop.render(dt);
 	texture_colors[1] = 0.5;
 
@@ -113,9 +110,21 @@ void render(double dt){
 
 	glPushMatrix();
 
+
 	//Center on player
 	glTranslatef(window.w/2.0-me->pos.x, window.h/2.0-me->pos.y,0);
 
+	//Render player fire
+	for(int i=0; i < NUM_PLAYERS; ++i) {
+		if(players[i] != NULL && players[i]->dead == 0) {
+			players[i]->render_fire(dt);
+		}
+	}
+
+	//Render walls
+	render_walls(dt);
+
+	//Render players
 	for(int i=0; i < NUM_PLAYERS; ++i) {
 		if(players[i] != NULL && players[i]->dead == 0) {
 			players[i]->render(dt);
@@ -134,30 +143,6 @@ void render(double dt){
 		}
 	}
 
-	//Draw walls
-
-	for(int x=0; x<MAP_WIDTH; ++x) {
-		for(int y=0; y<MAP_HEIGHT; ++y) {
-			if(map_value(x, y) > 0) {
-				glPushMatrix();
-				#ifdef DEBUG
-					if(map_value(x,y) == 2) {
-						texture_colors[0]=0;
-						texture_colors[1]=1;
-						texture_colors[2]=0;
-						map[y][x] = 1;
-					} else {
-						texture_colors[0]=1;
-						texture_colors[1]=0.5;
-						texture_colors[2]=1;
-					}
-				#endif
-				glTranslatef(x*64-32,y*64-32,0);
-				box.render(dt);
-				glPopMatrix();
-			}	
-		}
-	}
 
 	glPopMatrix();
 
@@ -220,6 +205,33 @@ void render(double dt){
 
 float radians_to_degrees(double rad) {
 	return (float) (rad * (180/PI));
+}
+
+static void render_walls(double dt) {
+	//Draw walls
+
+	for(int x=0; x<MAP_WIDTH; ++x) {
+		for(int y=0; y<MAP_HEIGHT; ++y) {
+			if(map_value(x, y) > 0) {
+				glPushMatrix();
+				#ifdef DEBUG
+					if(map_value(x,y) == 2) {
+						texture_colors[0]=0;
+						texture_colors[1]=1;
+						texture_colors[2]=0;
+						map[y][x] = 1;
+					} else {
+						texture_colors[0]=1;
+						texture_colors[1]=0.5;
+						texture_colors[2]=1;
+					}
+				#endif
+				glTranslatef(x*64-32,y*64-32,0);
+				box.render(dt);
+				glPopMatrix();
+			}	
+		}
+	}
 }
 
 static void glCircle3i(GLint x, GLint y, GLint radius) { 

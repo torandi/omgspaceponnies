@@ -25,6 +25,7 @@ enum texture_t {
 	TEXTURE_RIGHT,
 	TEXTURE_TAIL,
 	TEXTURE_DISPENCER,
+	TEXTURE_SHIELD,
 	TEXTURE_LAST
 };
 
@@ -41,6 +42,8 @@ struct Player {
 	int dead;
 
 	int id;
+
+	float shield_angle;
 
 	std::string nick;
 
@@ -60,6 +63,7 @@ struct Player {
 	void spawn();
 
 	void render(double dt);
+	void render_fire(double dt);
 
 	void logic(double dt);
 

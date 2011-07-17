@@ -152,20 +152,7 @@ void logic(double dt) {
 }
 
 static void hndl_collision(int mx, int my, const vector_t &cp, double dt) {
-	printf("Collision with block (%d, %d)\n", mx, my);
 	vector_t block = vector_t(mx*64,my*64);
-	/*float bx_min, bx_max;
-	float by_min, by_max;
-	bx_min= block.x-32;
-	bx_max = bx_min + 64;
-	by_min = block.y-32;
-	by_max = by_min+64;
-
-	float dx, dy;
-	dx = abs(block.x-me->pos.x);
-	dy = abs(block.y-me->pos.y);*/
-
-	//me->velocity*=0.9;
 
 	vector_t repulse = (block - cp).normalized().abs();
 	printf("Repulse: (%f, %f)\n", repulse.x, repulse.y);
@@ -179,24 +166,7 @@ static void hndl_collision(int mx, int my, const vector_t &cp, double dt) {
 	} else {
 		me->velocity *= -1.0f;
 	}
-/*
-	if(by_min < me->pos.y && me->pos.y < by_max) {
-		printf("Mirror y\n");
-		me->velocity.y *= -1.0f;
-	} else if(bx_min < me->pos.x && me->pos.y < bx_max) {
-		printf("Mirror x\n");
-		me->velocity.x *= -1.0f;
-	} else if( dx < dy) {
-		printf("Mirror y-2\n");
-		me->velocity.y *= -1.0f;
-	} else if( dx > dy) {
-		printf("Mirror x-2\n");
-		me->velocity.x *= -1.0f;
-	} else {
-		printf("Mirror both\n");
-		me->velocity.x *= -1.0f;
-		me->velocity.y *= -1.0f;
-	}*/
+
 	me->pos += me->velocity*dt*2.0f;
 	me->velocity *= 0.9;
 	map[my][mx] = 2;

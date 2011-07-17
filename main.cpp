@@ -52,9 +52,9 @@ static void poll(bool* run){
 					if(event.button.button == SDL_BUTTON_LEFT)
 						me->fire = true;
 					else if(event.button.button == SDL_BUTTON_WHEELUP)
-						me->shield_angle+=0.1;
+						me->shield_angle+=0.3;
 					else if(event.button.button == SDL_BUTTON_WHEELDOWN)
-						me->shield_angle-=0.1;
+						me->shield_angle-=0.3;
 					else if(event.button.button == SDL_BUTTON_RIGHT)
 						me->full_shield = true;
 					break;

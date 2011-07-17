@@ -9,6 +9,7 @@
 #include "level.h"
 
 #define SEND_DELAY 0.1f
+#define REPULSE_LIMIT 0.3f
 
 static double last_send=0;
 
@@ -143,9 +144,7 @@ static void hndl_collision(int mx, int my, int cp_index, const vector_t &cp, flo
 	vector_t block = vector_t(mx*64,my*64);
 
 	vector_t repulse = (block - cp).normalized().abs();
-	printf("Repulse: (%f, %f)\n", repulse.x, repulse.y);
 
-	#define REPULSE_LIMIT 0.3f
 
 	if(repulse.x-repulse.y > REPULSE_LIMIT) {
 		me->velocity.x *= -1.0f;

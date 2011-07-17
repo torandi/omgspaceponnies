@@ -123,7 +123,6 @@ void render(double dt){
 				glColor3f(1,1,1);
 				glDisable(GL_TEXTURE_2D);
 				glBegin(GL_POINTS);
-					glVertex2f(players[i]->pos.x,players[i]->pos.y); 
 					for(int c = 0; c<NUM_COLLISION_POINTS; ++c) {
 						vector_t v = players[i]->collision_point(c);
 						glVertex2f(v.x, v.y);

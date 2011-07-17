@@ -126,10 +126,10 @@ void network() {
 							int slot;
 							sscanf(data, "req %d", &slot);
 							if(me != NULL && me->id == slot) {
-								sprintf(buffer, "omg nak %i", slot);
+								sprintf(buffer, "omg nak %d", slot);
 								send_msg(buffer);
 							} else { 
-								sprintf(buffer, "omg hai %i %f %f %f", me->id, me->pos.x, me->pos.y, me->angle);
+								sprintf(buffer, "omg hai %d %f %f %f", me->id, me->pos.x, me->pos.y, me->angle);
 								send_msg(buffer);
 							}
 						} else if(CMD("mov")) {
@@ -137,14 +137,14 @@ void network() {
 							sscanf(data, "mov %d", &id);
 							Player * p = get_or_create_plajur(id);
 							if(p != NULL) {
-								sscanf(data, "mov %d %f %f %f %d %f %f %f",&id, &p->pos.x, &p->pos.y, &p->angle, &p->current_base_texture, &p->dx, &p->dy, &p->da);
+								sscanf(data, "mov %d %f %f %f %d %f %f %f",&id, &p->pos.x, &p->pos.y, &p->angle, (int*)&p->current_base_texture, &p->velocity.x, &p->velocity.y, &p->da);
 							}
 						} else if(CMD("hai")) {
 							int id;
 							sscanf(data, "hai %d", &id);
 							Player * p = get_or_create_plajur(id);
 							if(p != NULL) {
-								sscanf(data, "hai %d %f %f %f %d %f %f %f",&id, &p->pos.x, &p->pos.y, &p->angle);
+								sscanf(data, "hai %d %f %f %f",&id, &p->pos.x, &p->pos.y, &p->angle);
 							}
 						} else if(CMD("rot")) {
 							int id;

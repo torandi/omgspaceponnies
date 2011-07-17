@@ -10,7 +10,7 @@
 
 char * msg;
 
-#define SHOW_DOTS
+#define DEBUG
 
 GLfloat rbcolors[12][3]=				// Rainbow Of Colors
 {
@@ -118,22 +118,19 @@ void render(double dt){
 	for(int i=0; i < NUM_PLAYERS; ++i) {
 		if(players[i] != NULL && players[i]->dead == 0) {
 			players[i]->render(dt);
-			#ifdef SHOW_DOTS
-	float ax, ay, hyp;
-	hyp = vector_t(PLAYER_W/2.0,PLAYER_H/2.0).norm();
-	ax = abs((PLAYER_H/2.0) * cos(players[i]->angle)) + abs((PLAYER_W/2.0)*sin(players[i]->angle));
-	ay = abs((PLAYER_W/2.0) * cos(players[i]->angle)) + abs((PLAYER_H/2.0)*sin(players[i]->angle));
-	glPointSize(2.0f);
-	glColor3f(1,1,1);
-	glDisable(GL_TEXTURE_2D);
-	glBegin(GL_POINTS);
-		glVertex2f(players[i]->pos.x+ax,players[i]->pos.y);
-		glVertex2f(players[i]->pos.x-ax,players[i]->pos.y);
-		glVertex2f(players[i]->pos.x,players[i]->pos.y+ay);
-		glVertex2f(players[i]->pos.x,players[i]->pos.y-ay);
-	glEnd();
-	glEnable(GL_TEXTURE_2D);
-	#endif
+			#ifdef DEBUG
+				glPointSize(2.0f);
+				glColor3f(1,1,1);
+				glDisable(GL_TEXTURE_2D);
+				glBegin(GL_POINTS);
+					glVertex2f(players[i]->pos.x,players[i]->pos.y); 
+					for(int c = 0; c<NUM_COLLISION_POINTS; ++c) {
+						vector_t v = players[i]->collision_point(c);
+						glVertex2f(v.x, v.y);
+					}
+				glEnd();
+				glEnable(GL_TEXTURE_2D);
+			#endif
 		}
 	}
 
@@ -143,8 +140,29 @@ void render(double dt){
 		for(int y=0; y<MAP_HEIGHT; ++y) {
 			if(map_value(x, y) > 0) {
 				glPushMatrix();
-				glTranslatef(x*64+32,y*64+32,0);
+				#ifdef DEBUG
+					if(map_value(x,y) == 2) {
+						texture_colors[0]=0;
+						texture_colors[1]=1;
+						texture_colors[2]=0;
+						map[y][x] = 1;
+					} else {
+						texture_colors[0]=1;
+						texture_colors[1]=0.5;
+						texture_colors[2]=1;
+					}
+				#endif
+				glTranslatef(x*64-32,y*64-32,0);
 				box.render(dt);
+				#ifdef DEBUG
+					glPointSize(4.0f);
+					glColor3f(1,1,1);
+					glDisable(GL_TEXTURE_2D);
+					glBegin(GL_POINTS);
+						glVertex2f(32.0,32.0);
+					glEnd();
+					glEnable(GL_TEXTURE_2D);
+				#endif
 				glPopMatrix();
 			}	
 		}

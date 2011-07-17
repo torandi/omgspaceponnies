@@ -22,14 +22,13 @@ Player::Player(int _id) {
 void Player::init(int _id) {
 	free_move = false;
 	angle = PI;
-	dashing = false;
 	power = 1.0;
 	fire = false;
 	id = _id;
 	dead = 0;
+	da = 0;
 
-	dx = 0;
-	dy = 0;
+	velocity = vector_t(0.0f,0.0f);
 
 	current_base_texture = TEXTURE_BASE;
 
@@ -40,28 +39,29 @@ void Player::init(int _id) {
 
 	//Base
 	sprintf(texture,"gfx/player%i/base.png", id+1);
-   textures[TEXTURE_BASE] = RenderObject(texture, 1, 25, size);
+	textures[TEXTURE_BASE] = RenderObject(texture, 1, 25, size);
 
 	//Dash
 	sprintf(texture,"gfx/dash.png");
-   textures[TEXTURE_DASH] = RenderObject(texture, 1, 25, size);
+	//TODO: Separate textures
+	textures[TEXTURE_FWD] = textures[TEXTURE_DASH] = RenderObject(texture, 1, 25, size);
 
 	//Left
 	sprintf(texture,"gfx/left.png");
-   textures[TEXTURE_LEFT] = RenderObject(texture, 1, 25, size);
+	textures[TEXTURE_LEFT] = RenderObject(texture, 1, 25, size);
 
 	//Right
 	sprintf(texture,"gfx/right.png");
-   textures[TEXTURE_RIGHT] = RenderObject(texture, 1, 25, size);
+	textures[TEXTURE_RIGHT] = RenderObject(texture, 1, 25, size);
 
 
 	//Tail
 	sprintf(texture,"gfx/tail.png");
-   textures[TEXTURE_TAIL] = RenderObject(texture, 9, 25, size);
+	textures[TEXTURE_TAIL] = RenderObject(texture, 9, 25, size);
 
 	//Dispencer
 	sprintf(texture,"gfx/dispencer.png");
-   textures[TEXTURE_DISPENCER] = RenderObject(texture, 6, 25, size);
+	textures[TEXTURE_DISPENCER] = RenderObject(texture, 6, 25, size);
 
 }
 
@@ -72,25 +72,15 @@ void Player::spawn() {
 
 }
 
-void Player::dash() {
-	dashing = true;
-	target = vector_t(mouse);
-	struct timeval now;
-	gettimeofday(&now, NULL);
-	dash_start = now.tv_sec + now.tv_usec/1000000.0;
-}
-
 void Player::render(double dt) {
-	animation_t* anim = NULL;
-
 	glMatrixMode(GL_MODELVIEW);
-	
+
 	glPushMatrix();
 
 	glTranslatef(pos.x, pos.y, 0);
 	glRotatef(radians_to_degrees(angle+PI/2.0), 0, 0, 1.0);
 	glTranslatef(-PLAYER_W*0.5,-PLAYER_H*0.5, 0);
-	
+
 	//Draw textures:
 	textures[TEXTURE_BASE].render(dt);
 	if(current_base_texture != TEXTURE_BASE)
@@ -100,36 +90,36 @@ void Player::render(double dt) {
 		textures[TEXTURE_DISPENCER].render(dt);
 
 	glPopMatrix();
-	
+
 	glMatrixMode(GL_PROJECTION);
 
 	glDisable(GL_TEXTURE_2D);
 
-/*
-	glColor3f(1,0,0);
-	glPointSize(5);
-	glBegin(GL_POINTS);
+	/*
+		glColor3f(1,0,0);
+		glPointSize(5);
+		glBegin(GL_POINTS);
 		glVertex2f(pos.x,pos.y);
-	glEnd();
-	glColor3f(1,0,1);
-	glBegin(GL_LINES);
+		glEnd();
+		glColor3f(1,0,1);
+		glBegin(GL_LINES);
 		glVertex2f(pos.x, pos.y);
 		glVertex2f(mouse.x, mouse.y);
-	glEnd();
-*/
+		glEnd();
+	 */
 	if(fire) {
 		glLineWidth(2.0f);
 		glBegin(GL_LINES);
-			for(int i=0;i<12;++i) {
-				float dx = i*cos(angle+PI/2.0) - 6*cos(angle+PI/2.0) + cos(angle)*PLAYER_H/2.0;
-				float dy = i*sin(angle+PI/2.0) - 6*sin(angle+PI/2.0) + sin(angle)*PLAYER_H/2.0;
-				glColor3f(rbcolors[i][0],rbcolors[i][1],rbcolors[i][2]);
+		for(int i=0;i<12;++i) {
+			float dx = i*cos(angle+PI/2.0) - 6*cos(angle+PI/2.0) + cos(angle)*PLAYER_H/2.0;
+			float dy = i*sin(angle+PI/2.0) - 6*sin(angle+PI/2.0) + sin(angle)*PLAYER_H/2.0;
+			glColor3f(rbcolors[i][0],rbcolors[i][1],rbcolors[i][2]);
 
-				glVertex2f(pos.x+dx, pos.y+dy);
-				glVertex2f(fire_end.x+dx, fire_end.y+dy);
-				glVertex2f(pos.x+dx, pos.y+dy);
-				glVertex2f(pos.x+cos(angle)*PLAYER_H*0.1,pos.y+sin(angle)*PLAYER_H*0.1);
-			}
+			glVertex2f(pos.x+dx, pos.y+dy);
+			glVertex2f(fire_end.x+dx, fire_end.y+dy);
+			glVertex2f(pos.x+dx, pos.y+dy);
+			glVertex2f(pos.x+cos(angle)*PLAYER_H*0.1,pos.y+sin(angle)*PLAYER_H*0.1);
+		}
 		glEnd();
 		glLineWidth(1.0f);
 	}
@@ -138,8 +128,7 @@ void Player::render(double dt) {
 }
 
 void Player::logic(double dt) {
-	pos.x += dt*dx;
-	pos.y += dt*dy;
+	pos += velocity * dt;
 	angle += dt*da;
 
 	if(fire) {
@@ -177,14 +166,64 @@ void Player::calc_fire(bool detect_kill) {
 				}
 			}
 
-		int mx, my;
-		calc_map_index(fire_end, mx, my);
-		if(map_value(mx, my) > 0) {
-			fire_end = prev;
-			//map[my][mx]+=10;
-			break;
+			int mx, my;
+			calc_map_index(fire_end, mx, my);
+			if(map_value(mx, my) > 0) {
+				fire_end = prev;
+				//map[my][mx]+=10;
+				break;
+			}
 		}
 	}
- }
 
+}
+
+void Player::accelerate(const vector_t &dv) {
+	velocity+=dv;
+	if(velocity.norm() > MAX_VELOCITY) {
+		velocity = velocity.normalized() * MAX_VELOCITY;
+	}
+}
+
+/**
+ * Fetches the specified collision point
+ */
+vector_t Player::collision_point(int i) {
+	float ax, ay;
+	//ax = abs((PLAYER_H/2.1) * cos(angle)) + abs((PLAYER_W/2.1)*sin(angle));
+	//ay = abs((PLAYER_W/2.1) * cos(angle)) + abs((PLAYER_H/2.1)*sin(angle));
+	ax = PLAYER_W/2.0;
+	ay = PLAYER_H/2.;
+	vector_t v(0,0);
+	switch(i) {
+		case 0:
+			v.x -= ax;
+			v.y -= ay;
+			break;
+		case 1:
+			v.y -= ay;
+			break;
+		case 2:
+			v.x += ax;
+			v.y -= ay;
+			break;
+		case 3:
+			v.x -= ax;
+			break;
+		case 4:
+			v.x += ax;
+			break;
+		case 5:
+			v.x -= ax;
+			v.y += ay;
+			break;
+		case 6:
+			v.y += ay;
+			break;
+		case 7:
+			v.x += ax;
+			v.y += ay;
+			break;
+	}
+	return pos+v.rotate(angle-PI*0.5);
 }

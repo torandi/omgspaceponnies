@@ -9,9 +9,14 @@
 
 #define RESPAWN_TIME 60
 
+#define NUM_COLLISION_POINTS 8
+
+#define MAX_VELOCITY 1500.0f
+
 enum texture_t {
 	TEXTURE_BASE,
 	TEXTURE_DASH,
+	TEXTURE_FWD,
 	TEXTURE_LEFT,
 	TEXTURE_RIGHT,
 	TEXTURE_TAIL,
@@ -21,14 +26,13 @@ enum texture_t {
 
 struct Player {
 	vector_t pos;
-	vector_t target;
-	unsigned long dash_start;
 
-	float dx, dy, da;
+	float da; //Rotation speed
+	vector_t velocity; //Current velocity
 
 	vector_t fire_end;
 
-	bool dashing, fire;
+	bool fire;
 
 	int dead;
 
@@ -50,7 +54,6 @@ struct Player {
 	Player(int _id);
 
 
-	void dash();
 	void spawn();
 
 	void render(double dt);
@@ -60,6 +63,10 @@ struct Player {
 	void calc_fire(bool detect_kill);
 	
 	bool check_collision(const vector_t &tl, const vector_t &br);
+
+	void accelerate(const vector_t &dv);
+	vector_t collision_point(int i);
+
 private:
 	void init(int _id);
 };

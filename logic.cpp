@@ -10,13 +10,13 @@
 
 #define SEND_DELAY 0.1f
 
-static float dash_angle;
-
 static double last_send=0;
 
 static bool has_sent_still = false;
 static bool has_sent_no_rot = false;
 static bool has_sent_no_fire = true;
+
+static void hndl_collision(int mx, int my, double dt);
 
 void logic(double dt) {
 	double s = SPEED * dt;
@@ -44,119 +44,55 @@ void logic(double dt) {
 		}
 
 		if(keys[SDLK_SPACE]) {
-			me->dash();
-			dash_angle = atan2(mouse.y - me->pos.y, mouse.x - me->pos.x);
-		}
-
-		if(me->dashing) {
-			float dx = s * cos(dash_angle) * 2.2;
-			float dy = s * sin(dash_angle) * 2.2;
-			me->pos.x += dx;
-			me->pos.y += dy;
-
-			struct timeval now;
-			gettimeofday(&now, NULL);
-
-			if( (me->pos - me->target).norm() < s*1.5)
-				me->dashing = false;
-			else if( me->dash_start+1 > (now.tv_sec+now.tv_usec/1000000.0))
-				me->current_base_texture = TEXTURE_DASH;
+			me->accelerate(vector_t(
+				cos(me->angle),
+				sin(me->angle)
+				) * s * DASH_SPEED_FACTOR);
+			me->current_base_texture = TEXTURE_DASH;
 		}
 
 		if(keys[SDLK_d] || keys[SDLK_e]) {
-			me->pos.x += s * cos(me->angle+PI/2.0);
-			me->pos.y += s * sin(me->angle+PI/2.0);
+			me->accelerate(vector_t(
+				cos(me->angle+PI/2.0),
+				sin(me->angle+PI/2.0)
+				) * s);
 			me->current_base_texture = TEXTURE_LEFT;
 		}
 
 		if(keys[SDLK_a]) {
-			me->pos.x += s * cos(me->angle+PI*1.5);
-			me->pos.y += s * sin(me->angle+PI*1.5);
+			me->accelerate(vector_t(
+				cos(me->angle+PI*1.5),
+				sin(me->angle+PI*1.5)
+				) * s);
 			me->current_base_texture = TEXTURE_RIGHT;
 		}
 
 		if(keys[SDLK_w] || keys[SDLK_COMMA]) {
-			me->pos.x += s * cos(me->angle);
-			me->pos.y += s * sin(me->angle);
-			me->current_base_texture = TEXTURE_DASH;
+			me->accelerate(vector_t(
+				cos(me->angle),
+				sin(me->angle)
+				) * s);
+			me->current_base_texture = TEXTURE_FWD;
 		}
 
 
-		if(keys[SDLK_o] || keys[SDLK_s]) {
-			me->pos.x += s * cos(me->angle+PI);
-			me->pos.y += s * sin(me->angle+PI);
-		}
+		me->logic(dt);
 
 		//Collision detection:
-		bool loop = false;
-		float da=me->angle - last_a;
-		vector_t diff = me->pos - last;
-		int l = 10;
-		do {
-			loop = false;
+		//float da=me->angle - last_a;
+		//vector_t diff = me->pos - last;
+		//Collision detect on the collision points:
+		for(int i = 0; i < NUM_COLLISION_POINTS; ++i) {
 			int mx, my;
-			float ax, ay;
-
-			ax = abs((PLAYER_H/2.1) * cos(me->angle)) + abs((PLAYER_W/2.1)*sin(me->angle));
-			ay = abs((PLAYER_W/2.1) * cos(me->angle)) + abs((PLAYER_H/2.1)*sin(me->angle));
-			calc_map_index(vector_t(me->pos.x-ax,me->pos.y), mx, my);
+			vector_t v = me->collision_point(i);
+			calc_map_index(v, mx, my);
 			if(map_value(mx, my)>0) {
-				goto collision;
+				hndl_collision(mx,my, dt);
+				break;
 			}
-			calc_map_index(vector_t(me->pos.x+ax,me->pos.y), mx, my);
-			if(map_value(mx, my)>0) {
-				goto collision;
-			}
-			calc_map_index(vector_t(me->pos.x,me->pos.y+ay), mx, my);
-			if(map_value(mx, my)>0) {
-				goto collision;
-			}
-			calc_map_index(vector_t(me->pos.x,me->pos.y-ay), mx, my);
-			if(map_value(mx, my)>0) {
-				goto collision;
-			}
+		}
 
-			//No collision - break;
-			break;
 
-			collision:
-				printf("Collision with block (%d, %d)\n", mx, my);
-				float bx_min, bx_max;
-				float by_min, by_max;
-				bx_min= mx*64-32;
-				bx_max = bx_min + 64;
-				by_min = my*64-32;
-				by_max = by_min+64;
-
-				float dx, dy;
-
-				dx = abs(mx*64-me->pos.x);
-				dy = abs(my*64-me->pos.y);
-			
-				if(by_min < me->pos.y && me->pos.y < by_max) {
-					printf("Mirror y\n");
-					me->pos.y -= diff.y * 2.0;
-				} else if(bx_min < me->pos.x && me->pos.y < bx_max) {
-					printf("Mirror x\n");
-					me->pos.x -= diff.x * 2.0;
-				} else if( dx < dy) {
-					printf("Mirror y-2\n");
-					me->pos.y -= diff.y * 2.0;
-				} else if( dx > dy) {
-					printf("Mirror x-2\n");
-					me->pos.x -= diff.x * 2.0;
-				} else {
-					printf("Mirror both\n");
-					me->pos = me->pos - diff*1.5;
-				}		
-				map[my][mx] = 2;
-				me->angle -= da;
-				me->dashing = false;
-				loop = true;
-
-				--l;
-
-		} while(loop && l > 0);
 
 		if(me->fire) {
 			me->calc_fire(true);
@@ -213,6 +149,57 @@ void logic(double dt) {
 			players[i]->logic(dt);	
 		}
 	}
+}
+
+static void hndl_collision(int mx, int my, double dt) {
+	printf("Collision with block (%d, %d)\n", mx, my);
+	vector_t block = vector_t(mx*64,my*64);
+	/*float bx_min, bx_max;
+	float by_min, by_max;
+	bx_min= block.x-32;
+	bx_max = bx_min + 64;
+	by_min = block.y-32;
+	by_max = by_min+64;
+
+	float dx, dy;
+	dx = abs(block.x-me->pos.x);
+	dy = abs(block.y-me->pos.y);*/
+
+	//me->velocity*=0.9;
+
+	vector_t repulse = (block - me->pos).normalized().abs();
+	printf("Repulse: (%f, %f)\n", repulse.x, repulse.y);
+
+	#define REPULSE_LIMIT 0.5f
+
+	if(repulse.x-repulse.y > REPULSE_LIMIT) {
+		me->velocity.x *= -1.0f;
+	} else if(repulse.y - repulse.x > REPULSE_LIMIT) {
+		me->velocity.y *= -1.0f;
+	} else {
+		me->velocity *= -1.0f;
+	}
+/*
+	if(by_min < me->pos.y && me->pos.y < by_max) {
+		printf("Mirror y\n");
+		me->velocity.y *= -1.0f;
+	} else if(bx_min < me->pos.x && me->pos.y < bx_max) {
+		printf("Mirror x\n");
+		me->velocity.x *= -1.0f;
+	} else if( dx < dy) {
+		printf("Mirror y-2\n");
+		me->velocity.y *= -1.0f;
+	} else if( dx > dy) {
+		printf("Mirror x-2\n");
+		me->velocity.x *= -1.0f;
+	} else {
+		printf("Mirror both\n");
+		me->velocity.x *= -1.0f;
+		me->velocity.y *= -1.0f;
+	}*/
+	me->pos += me->velocity*dt*2.0f;
+	me->velocity *= 0.9;
+	map[my][mx] = 2;
 }
 
 Player * create_player(char * nick, int id) {

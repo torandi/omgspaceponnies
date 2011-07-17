@@ -16,7 +16,7 @@ static bool has_sent_still = false;
 static bool has_sent_no_rot = false;
 static bool has_sent_no_fire = true;
 
-static void hndl_collision(int mx, int my, double dt);
+static void hndl_collision(int mx, int my, const vector_t &cp, double dt);
 
 void logic(double dt) {
 	double s = SPEED * dt;
@@ -84,10 +84,10 @@ void logic(double dt) {
 		//Collision detect on the collision points:
 		for(int i = 0; i < NUM_COLLISION_POINTS; ++i) {
 			int mx, my;
-			vector_t v = me->collision_point(i);
-			calc_map_index(v, mx, my);
+			vector_t cp = me->collision_point(i);
+			calc_map_index(cp, mx, my);
 			if(map_value(mx, my)>0) {
-				hndl_collision(mx,my, dt);
+				hndl_collision(mx,my,cp, dt);
 				break;
 			}
 		}
@@ -151,7 +151,7 @@ void logic(double dt) {
 	}
 }
 
-static void hndl_collision(int mx, int my, double dt) {
+static void hndl_collision(int mx, int my, const vector_t &cp, double dt) {
 	printf("Collision with block (%d, %d)\n", mx, my);
 	vector_t block = vector_t(mx*64,my*64);
 	/*float bx_min, bx_max;
@@ -167,10 +167,10 @@ static void hndl_collision(int mx, int my, double dt) {
 
 	//me->velocity*=0.9;
 
-	vector_t repulse = (block - me->pos).normalized().abs();
+	vector_t repulse = (block - cp).normalized().abs();
 	printf("Repulse: (%f, %f)\n", repulse.x, repulse.y);
 
-	#define REPULSE_LIMIT 0.5f
+	#define REPULSE_LIMIT 0.3f
 
 	if(repulse.x-repulse.y > REPULSE_LIMIT) {
 		me->velocity.x *= -1.0f;

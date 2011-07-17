@@ -2,6 +2,7 @@
 #include "common.h"
 #include "render.h"
 #include "level.h"
+#include "texture.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -9,6 +10,7 @@
 #include <GL/gl.h>
 #include <math.h>
 #include <sys/time.h>
+
 
 Player::Player(const char * n, int _id) {
 	nick = std::string(n);
@@ -20,12 +22,15 @@ Player::Player(int _id) {
 }
 
 void Player::init(int _id) {
+	char texture[64];
+
 	angle = PI;
 	power = 1.0;
 	fire = false;
 	id = _id;
 	dead = 0;
 	da = 0;
+	full_shield = false;
 
 	shield_angle = PI;
 
@@ -33,10 +38,11 @@ void Player::init(int _id) {
 
 	current_base_texture = TEXTURE_BASE;
 
-	char texture[64];
 
 	//Load textures:
 	vector_t size = vector_t(PLAYER_W, PLAYER_H);
+
+	shield = new Texture("gfx/shield.png",1); 
 
 	//Base
 	sprintf(texture,"gfx/player%i/base.png", id+1);
@@ -66,11 +72,6 @@ void Player::init(int _id) {
 	//Dispencer
 	sprintf(texture,"gfx/dispencer.png");
 	textures[TEXTURE_DISPENCER] = RenderObject(texture, 6, 25, size);
-
-	//Shield
-	sprintf(texture,"gfx/shield.png");
-	textures[TEXTURE_SHIELD] = RenderObject(texture, 1, 25, vector_t(200.0,200.0));
-	
 	
 }
 
@@ -111,13 +112,76 @@ void Player::render(double dt) {
 
 	glPushMatrix();
 	
-	glTranslatef(pos.x-textures[TEXTURE_SHIELD].size.x/2.0, pos.y-textures[TEXTURE_SHIELD].size.y/2.0,0);
-	textures[TEXTURE_SHIELD].render(dt);
+	glTranslatef(pos.x-shield->width()/2, pos.y-shield->height()/2,0);
+		shield->bind();
+		if(full_shield) {
+			glBegin(GL_QUADS);
+				glTexCoord2f(0,1.0); glVertex2f(0,200.0);
+				glTexCoord2f(0,0); glVertex2f(0,0);
+				glTexCoord2f(1.0,0); glVertex2f(200.0,0);
+				glTexCoord2f(1.0,1.0); glVertex2f(200.0,200.0);
+			glEnd();
+		} else {
+			float sx1, sy1, sx2, sy2;
+			shield_coords(shield_angle-PI/4.0,sx1,sy1);
+			shield_coords(shield_angle+PI/4.0,sx2,sy2);
+			int corner = (int)floor(period(shield_angle)/(PI/2.0));
+			float cx, cy;
+
+			switch(corner) {
+				case 0:
+					cx = 0;
+					cy = 1;
+					break;
+				case 1:
+					cx = 0;
+					cy = 0;
+					break;
+				case 2:
+					cx = 1;
+					cy = 0;
+					break;
+				case 3:
+					cx = 1;
+					cy = 1;
+					break;
+			}
+			glBegin(GL_TRIANGLES);
+				glTexCoord2f(sx1,sy1); glVertex2f(200.0*sx1,200.0*sy1);
+				glTexCoord2f(sx2,sy2); glVertex2f(200.0*sx2,200.0*sy2);
+				glTexCoord2f(0.5, 0.5); glVertex2f(100.0, 100.0);
+				glTexCoord2f(sx1,sy1); glVertex2f(200.0*sx1,200.0*sy1);
+				glTexCoord2f(sx2,sy2); glVertex2f(200.0*sx2,200.0*sy2);
+				glTexCoord2f(cx,cy); glVertex2f(200.0*cx,200.0*cy);
+
+			glEnd();
+			
+		}
+
 	
 	glPopMatrix();
 
 	texture_colors[1]=0.5;
 
+}
+
+void Player::shield_coords(float a, float &x, float &y) {
+	a = period(a+PI/2.0);
+	if(a <= PI/4.0 || a >= 7.0*PI/4.0) {
+		x = 1.0;
+		y = tan(a);
+	} else if(a > PI/4.0 && a <= 3.0*PI/4.0) {
+		x = cos(a)/sin(a);
+		y = 1;
+	} else if(a > 3.0*PI/4.0 && a <= 5.0*PI/4.0) {
+		x = -1.0;
+		y = -tan(a);
+	} else {
+		x = -cos(a)/sin(a);
+		y = -1.0;
+	}
+	x = (x+1.0)*0.5;
+	y = (y+1.0)*0.5;
 }
 
 void Player::render_fire(double dt) {

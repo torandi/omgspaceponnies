@@ -49,13 +49,19 @@ static void poll(bool* run){
 		if(ready) {
 			switch (event.type){
 				case SDL_MOUSEBUTTONDOWN:
-					if(event.button.button == 1)
+					if(event.button.button == SDL_BUTTON_LEFT)
 						me->fire = true;
+					else if(event.button.button == SDL_BUTTON_WHEELUP)
+						me->shield_angle+=0.1;
+					else if(event.button.button == SDL_BUTTON_WHEELDOWN)
+						me->shield_angle-=0.1;
 					break;
+
 				case SDL_MOUSEBUTTONUP:
-					if(event.button.button == 1)
+					if(event.button.button == SDL_BUTTON_LEFT)
 						me->fire = false;
 					break;
+
 
 				case SDL_KEYDOWN:
 					switch(event.key.keysym.sym) {

@@ -234,6 +234,17 @@ static void render_walls(double dt) {
 	}
 }
 
+float period(float rad) {
+	if(rad > 0) 
+		return fmod(rad, 2.0*PI);
+	else {
+		do {
+			rad+=2.0*PI;
+		} while(rad < 0);
+		return rad;
+	}
+}
+
 static void glCircle3i(GLint x, GLint y, GLint radius) { 
 	float angle; 
 	glBegin(GL_LINE_LOOP); 

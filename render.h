@@ -27,6 +27,8 @@ struct animation_t {
 animation_t load_anim(const char* filename, unsigned int frames, unsigned int fps);
 Texture::texcoord_t prepare_animation(animation_t * anim, double dt);
 float radians_to_degrees(double rad);
+//Make sure a angle is betweedn 0 and 2PI
+float period(float rad);
 
 extern GLfloat rbcolors[12][3];				// Rainbow Of Colors
 extern float texture_colors[3];

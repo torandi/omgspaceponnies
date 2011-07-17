@@ -2,6 +2,7 @@
 #define INC_PLAYER_H
 
 #include "vector.h"
+#include "texture.h"
 #include "render_object.h"
 #include <string>
 
@@ -25,7 +26,6 @@ enum texture_t {
 	TEXTURE_RIGHT,
 	TEXTURE_TAIL,
 	TEXTURE_DISPENCER,
-	TEXTURE_SHIELD,
 	TEXTURE_LAST
 };
 
@@ -45,8 +45,11 @@ struct Player {
 
 	float shield_angle;
 
+	bool full_shield;
+
 	std::string nick;
 
+	Texture * shield;
 
 	texture_t current_base_texture;	
 
@@ -78,6 +81,8 @@ struct Player {
 
 private:
 	void init(int _id);
+
+	void shield_coords(float a, float &x, float &y);
 };
 
 #endif

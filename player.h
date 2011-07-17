@@ -45,7 +45,6 @@ struct Player {
 
 	RenderObject textures[TEXTURE_LAST];
 
-	bool free_move;
 	float angle;
 	float power;
 

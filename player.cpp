@@ -20,7 +20,6 @@ Player::Player(int _id) {
 }
 
 void Player::init(int _id) {
-	free_move = false;
 	angle = PI;
 	power = 1.0;
 	fire = false;

@@ -154,15 +154,6 @@ void render(double dt){
 				#endif
 				glTranslatef(x*64-32,y*64-32,0);
 				box.render(dt);
-				#ifdef DEBUG
-					glPointSize(4.0f);
-					glColor3f(1,1,1);
-					glDisable(GL_TEXTURE_2D);
-					glBegin(GL_POINTS);
-						glVertex2f(32.0,32.0);
-					glEnd();
-					glEnable(GL_TEXTURE_2D);
-				#endif
 				glPopMatrix();
 			}	
 		}

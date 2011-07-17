@@ -33,15 +33,7 @@ void logic(double dt) {
 	if(me->dead == 0) {
 		me->current_base_texture = TEXTURE_BASE;
 
-		if(keys[SDLK_RCTRL])
-			me->free_move = true;
-		else 
-			me->free_move = false;
-
-		//Calculate angle:
-		if(!me->free_move) {
-			me->angle = atan2(mouse.y - me->pos.y, mouse.x - me->pos.x);
-		}
+		me->angle = atan2(mouse.y - me->pos.y, mouse.x - me->pos.x);
 
 		if(keys[SDLK_SPACE]) {
 			me->accelerate(vector_t(

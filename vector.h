@@ -40,7 +40,7 @@ struct vector_t {
 	return *(this);
   }
 
-  vector_t operator+(const vector_t &other) {
+  vector_t operator+(const vector_t &other) const {
 	return vector_t(x+other.x,y+other.y);
   }
 
@@ -50,12 +50,16 @@ struct vector_t {
 	return *(this);
   }
 
-  vector_t operator*(const float m) {
+  vector_t operator*(const float m) const {
 	return vector_t(x*m, y*m);
   }
 
-  vector_t operator*(const vector_t &other) {
+  vector_t operator*(const vector_t &other) const {
 	return vector_t(x*other.x, y*other.y);
+  }
+
+  vector_t operator/(const float f) const {
+	return vector_t(x/f, y/f);
   }
 
   vector_t operator*=(const float m) {
@@ -69,19 +73,19 @@ struct vector_t {
 	y *= other.y;
 	return *(this);
   }
-  float norm() {
+  float norm() const {
 		return std::sqrt(x*x+y*y);
   }
 
-  vector_t normalized() {
+  vector_t normalized() const {
 		return vector_t(x/norm(), y/norm());
   }
 
-  vector_t abs() {
+  vector_t abs() const{
 		return vector_t(std::abs(x),std::abs(y));
   }
 
-  vector_t rotate(double angle) {
+  vector_t rotate(double angle) const {
 		return vector_t(x*std::cos(angle) - y*std::sin(angle), x*std::sin(angle) + y*std::cos(angle));
   }
 };

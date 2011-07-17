@@ -187,43 +187,44 @@ void Player::accelerate(const vector_t &dv) {
 
 /**
  * Fetches the specified collision point
+ * Set a to an angle to use that instead of this->angle
  */
-vector_t Player::collision_point(int i) {
+	vector_t Player::collision_point(int i, const float * a) const{
 	float ax, ay;
-	//ax = abs((PLAYER_H/2.1) * cos(angle)) + abs((PLAYER_W/2.1)*sin(angle));
-	//ay = abs((PLAYER_W/2.1) * cos(angle)) + abs((PLAYER_H/2.1)*sin(angle));
+	if(a == NULL)
+		a = &angle; 
 	ax = PLAYER_W/2.0;
-	ay = PLAYER_H/2.;
+	ay = PLAYER_H/2.0;
 	vector_t v(0,0);
 	switch(i) {
 		case 0:
-			v.x -= ax;
-			v.y -= ay;
+			v.x -= ax-17.0;
+			v.y -= ay-13.0;
 			break;
 		case 1:
-			v.y -= ay;
+			v.y -= ay-10.0;
 			break;
 		case 2:
-			v.x += ax;
-			v.y -= ay;
+			v.x += ax-14.0;
+			v.y -= ay-16.0;
 			break;
 		case 3:
-			v.x -= ax;
+			v.x -= ax-20.0;
 			break;
 		case 4:
-			v.x += ax;
+			v.x += ax-20.0;
 			break;
 		case 5:
-			v.x -= ax;
-			v.y += ay;
+			v.x -= ax-8.0;
+			v.y += ay-23.0;
 			break;
 		case 6:
 			v.y += ay;
 			break;
 		case 7:
-			v.x += ax;
-			v.y += ay;
+			v.x += ax-12.0;
+			v.y += ay-18.0;
 			break;
 	}
-	return pos+v.rotate(angle-PI*0.5);
+	return pos+v.rotate(*a-PI*0.5);
 }

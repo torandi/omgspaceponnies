@@ -7,6 +7,8 @@
 #define MAP_HEIGHT 24
 #define MAP_WIDTH 32
 
+#define ELASTICITY 0.5 //Percent of velocity to keep on collision with wall
+
 
 extern int map[MAP_HEIGHT][MAP_WIDTH];
 extern std::vector<vector_t> spawn_pts;

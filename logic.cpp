@@ -16,7 +16,7 @@ static bool has_sent_still = false;
 static bool has_sent_no_rot = false;
 static bool has_sent_no_fire = true;
 
-static void hndl_collision(int mx, int my, const vector_t &cp, double dt);
+static void hndl_collision(int mx, int my, int cp_index, const vector_t &cp, float last_angle, double dt);
 
 void logic(double dt) {
 	double s = SPEED * dt;
@@ -78,17 +78,13 @@ void logic(double dt) {
 
 		me->logic(dt);
 
-		//Collision detection:
-		//float da=me->angle - last_a;
-		//vector_t diff = me->pos - last;
 		//Collision detect on the collision points:
 		for(int i = 0; i < NUM_COLLISION_POINTS; ++i) {
 			int mx, my;
 			vector_t cp = me->collision_point(i);
 			calc_map_index(cp, mx, my);
 			if(map_value(mx, my)>0) {
-				hndl_collision(mx,my,cp, dt);
-				break;
+				hndl_collision(mx,my,i, cp, last_a , dt);
 			}
 		}
 
@@ -151,7 +147,7 @@ void logic(double dt) {
 	}
 }
 
-static void hndl_collision(int mx, int my, const vector_t &cp, double dt) {
+static void hndl_collision(int mx, int my, int cp_index, const vector_t &cp, float last_angle, double dt) {
 	vector_t block = vector_t(mx*64,my*64);
 
 	vector_t repulse = (block - cp).normalized().abs();
@@ -167,8 +163,14 @@ static void hndl_collision(int mx, int my, const vector_t &cp, double dt) {
 		me->velocity *= -1.0f;
 	}
 
-	me->pos += me->velocity*dt*2.0f;
-	me->velocity *= 0.9;
+	vector_t old_cp = me->collision_point(cp_index, &last_angle);
+
+	vector_t rotation_impuls = old_cp - cp;
+
+	me->velocity+= (rotation_impuls/dt)*0.4;
+	
+	me->pos += me->velocity*dt + rotation_impuls;
+	me->velocity *= ELASTICITY;
 	map[my][mx] = 2;
 }
 

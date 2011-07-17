@@ -65,7 +65,7 @@ struct Player {
 	bool check_collision(const vector_t &tl, const vector_t &br);
 
 	void accelerate(const vector_t &dv);
-	vector_t collision_point(int i);
+	vector_t collision_point(int i, const float * a = NULL) const;
 
 private:
 	void init(int _id);

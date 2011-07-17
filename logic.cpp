@@ -37,11 +37,13 @@ void logic(double dt) {
 		me->angle = atan2(mouse.y - me->pos.y, mouse.x - me->pos.x);
 
 		if(keys[SDLK_SPACE]) {
-			me->accelerate(vector_t(
-				cos(me->angle),
-				sin(me->angle)
-				) * s * DASH_SPEED_FACTOR);
-			me->current_base_texture = TEXTURE_DASH;
+			if(me->use_power(DASH_POWER*dt)) {
+				me->accelerate(vector_t(
+					cos(me->angle),
+					sin(me->angle)
+					) * s * DASH_SPEED_FACTOR);
+				me->current_base_texture = TEXTURE_DASH;
+			}
 		}
 
 		if(keys[SDLK_d] || keys[SDLK_e]) {
@@ -84,7 +86,10 @@ void logic(double dt) {
 
 
 		if(me->fire) {
-			me->calc_fire(true);
+			if(me->use_power(FIRE_POWER*dt))
+				me->calc_fire(true);
+			else
+				me->fire = false;
 		}
 
 

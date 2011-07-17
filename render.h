@@ -9,6 +9,8 @@
 
 extern char * msg;
 
+extern float flash_power;
+
 void render_init(int w, int h, bool fullscreen);
 void render(double dt);
 void render_splash();

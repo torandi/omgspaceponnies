@@ -13,6 +13,10 @@
 
 #define MAX_VELOCITY 1500.0f
 
+#define PWR_REGEN_FACTOR 0.15
+#define DASH_POWER 0.5f
+#define FIRE_POWER 1.0f
+
 enum texture_t {
 	TEXTURE_BASE,
 	TEXTURE_DASH,
@@ -62,6 +66,8 @@ struct Player {
 	void calc_fire(bool detect_kill);
 	
 	bool check_collision(const vector_t &tl, const vector_t &br);
+
+	bool use_power(float amount);
 
 	void accelerate(const vector_t &dv);
 	vector_t collision_point(int i, const float * a = NULL) const;

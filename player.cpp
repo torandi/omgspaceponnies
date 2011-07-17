@@ -68,7 +68,9 @@ void Player::init(int _id) {
 void Player::spawn() {
 	pos = get_rand_spawn();
 	dead = 0;
-
+	power = 1.0;
+	da = 0;
+	angle = PI;
 }
 
 void Player::render(double dt) {
@@ -139,6 +141,21 @@ void Player::logic(double dt) {
 		if(dead > RESPAWN_TIME)
 			spawn();
 	}
+
+	power+=(power*0.3+1)*dt*PWR_REGEN_FACTOR;
+	if(power > 1.0) 
+		power = 1.0;
+}
+
+bool Player::use_power(float amount) {
+	if(power >= amount) {
+		power -= amount;
+		return true;
+	} else {
+		if(this == me && flash_power <= 0) 
+			flash_power = 1;
+		return false;
+	}
 }
 
 void Player::calc_fire(bool detect_kill) {
@@ -188,7 +205,7 @@ void Player::accelerate(const vector_t &dv) {
  * Fetches the specified collision point
  * Set a to an angle to use that instead of this->angle
  */
-	vector_t Player::collision_point(int i, const float * a) const{
+vector_t Player::collision_point(int i, const float * a) const{
 	float ax, ay;
 	if(a == NULL)
 		a = &angle; 

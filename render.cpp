@@ -9,6 +9,7 @@
 #include "level.h"
 
 char * msg;
+float flash_power = 0;
 
 #define DEBUG
 
@@ -159,6 +160,60 @@ void render(double dt){
 	}
 
 	glPopMatrix();
+
+	/**********
+	 * HUD
+	 *********/
+
+	//Power bar
+
+	glPushMatrix();
+	glTranslatef(window.w-210, window.h-40,0);
+
+	glDisable(GL_TEXTURE_2D);
+	glColor3f(1,1,1);
+	glLineWidth(2.0f);
+
+	float pw = 200.0f;
+	float ph = 30.0f;
+
+	glBegin(GL_LINES);
+		glVertex2f(0.0,0.0); glVertex2f(pw,0.0);
+		glVertex2f(0.0,0.0); glVertex2f(0.0,ph);
+		glVertex2f(pw,0.0); glVertex2f(pw,ph);
+		glVertex2f(0.0,ph); glVertex2f(pw,ph);
+	glEnd();
+
+	if(flash_power <= 0) {
+		glColor4f(1,1,1,0.1);
+	} else {
+		flash_power -= dt*20.0; 
+		glColor4f(1,1,1,0.8);
+	}
+
+	glBegin(GL_TRIANGLES);
+		glVertex2f(0.0,0.0); glVertex2f(pw,0.0); glVertex2f(0.0,ph);
+		glVertex2f(pw,0.0); glVertex2f(0.0,ph); glVertex2f(pw,ph);
+	glEnd();
+
+
+	float ll = pw*me->power; //Line length
+	float lw = ph/12.0; //Line width
+	
+	glLineWidth(lw);
+
+	glBegin(GL_LINES);
+		for(int i=0;i<12; ++i) {
+			glColor4f(rbcolors[i][0],rbcolors[i][1],rbcolors[i][2],0.7);
+			glVertex2f(0.0,lw*(i+0.5)); glVertex2f(ll,lw*(i+0.5));
+		}
+	glEnd();
+
+	glColor4f(1,1,1,1);
+
+	glEnable(GL_TEXTURE_2D);
+	glPopMatrix();
+	
 
 	SDL_GL_SwapBuffers();
 }

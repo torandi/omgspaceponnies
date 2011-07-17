@@ -17,6 +17,7 @@
 #define PWR_REGEN_FACTOR 0.15
 #define DASH_POWER 0.5f
 #define FIRE_POWER 1.0f
+#define SHIELD_POWER 0.4f
 
 enum texture_t {
 	TEXTURE_BASE,

@@ -55,11 +55,15 @@ static void poll(bool* run){
 						me->shield_angle+=0.1;
 					else if(event.button.button == SDL_BUTTON_WHEELDOWN)
 						me->shield_angle-=0.1;
+					else if(event.button.button == SDL_BUTTON_RIGHT)
+						me->full_shield = true;
 					break;
 
 				case SDL_MOUSEBUTTONUP:
 					if(event.button.button == SDL_BUTTON_LEFT)
 						me->fire = false;
+					else if(event.button.button == SDL_BUTTON_RIGHT)
+						me->full_shield = false;
 					break;
 
 

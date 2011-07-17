@@ -86,10 +86,16 @@ void logic(double dt) {
 
 
 		if(me->fire) {
+			me->full_shield = false;
 			if(me->use_power(FIRE_POWER*dt))
 				me->calc_fire(true);
 			else
 				me->fire = false;
+		}
+
+		if(me->full_shield) {
+			if(!me->use_power(SHIELD_POWER*dt))
+				me->full_shield = false;
 		}
 
 

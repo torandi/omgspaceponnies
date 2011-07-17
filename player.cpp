@@ -109,10 +109,11 @@ void Player::render(double dt) {
 
 	glMatrixMode(GL_PROJECTION);
 
+	if(!fire) {
+		glPushMatrix();
+		
+		glTranslatef(pos.x-shield->width()/2, pos.y-shield->height()/2,0);
 
-	glPushMatrix();
-	
-	glTranslatef(pos.x-shield->width()/2, pos.y-shield->height()/2,0);
 		shield->bind();
 		if(full_shield) {
 			glBegin(GL_QUADS);
@@ -153,13 +154,13 @@ void Player::render(double dt) {
 				glTexCoord2f(sx1,sy1); glVertex2f(200.0*sx1,200.0*sy1);
 				glTexCoord2f(sx2,sy2); glVertex2f(200.0*sx2,200.0*sy2);
 				glTexCoord2f(cx,cy); glVertex2f(200.0*cx,200.0*cy);
-
 			glEnd();
 			
 		}
 
+		glPopMatrix();
+	}
 	
-	glPopMatrix();
 
 	texture_colors[1]=0.5;
 

@@ -16,7 +16,6 @@
 #include <math.h>
 #include <time.h>
 
-
 #include "sha1.h"
 #include "network_lib.h"
 
@@ -24,61 +23,6 @@
  * Contains network function shared by client and server
  *****/
 
-/** 
- * Internal data structure for network data
- */
-struct network_data_t {
-	void * data;
-	sockaddr src_addr;
-	socklen_t src_addr_len;
-		
-private:
-	bool _valid;
-
-public:
-
-	network_data_t() {
-		_valid = true;
-		data = malloc(PAYLOAD_SIZE);
-	}
-
-	network_data_t(network_data_t &nd) {
-		data = nd.data;
-		src_addr = nd.src_addr;
-		src_addr_len = nd.src_addr_len;
-		_valid = nd._valid;
-		nd._valid = false;
-		nd.data = NULL;
-		_valid = true;
-	}
-
-	~network_data_t() {
-		if(_valid)
-			free(data);
-	}
-
-	char &operator[] (int index) {
-		if(_valid && index < PAYLOAD_SIZE) {
-			return *((char*)data + index);
-		} else if(!_valid) {
-			throw "Reading from invalidated network data";
-		} else {
-			throw "Index out of bounds";
-		}
-	}
-
-	void invalidate() {
-		if(_valid) {
-			_valid = false;
-			free(data);
-			data = NULL;
-		}
-	}
-
-	bool valid() {
-		return _valid;
-	}
-};
 
 static bool cmp_hash(char hash[HASH_SIZE],char * str,int len);
 static void get_hash(char hash[HASH_SIZE],char * str,int len);
@@ -88,7 +32,71 @@ static void write_msg(int sock, void * data, sockaddr_in * to_addr);
 static network_data_t read_frame(int sock);
 
 static int ftnw(float f, void * nw);
-static float nwtf(uint16_t nw);
+static int nwtf(void * nw, float * f);
+static int strtnw(char * str, void * nw);
+static int nwtstr(void * nw, char * str);
+
+void send_msg(int sock, sockaddr_in * target, nw_var_type_t * var_types, nw_var_t * vars, int num_vars) {
+	char * nw = (char*)malloc(FRAME_SIZE);
+	int pos = 0;	
+	for(int i=0; i < num_vars; ++i) {
+		switch(var_types[i]) {
+			case NW_VAR_FLOAT:
+				pos += ftnw(vars[i].f,nw+pos);
+				break;
+			case NW_VAR_UINT16:
+				uint16_t nwi = htons(vars[i].i);
+				memcpy(nw+pos,&nwi,sizeof(uint16_t));
+				pos += sizeof(uint16_t);
+				break;
+			case NW_VAR_CHAR:
+				nw[pos] = vars[i].c;
+				pos += sizeof(char);
+				break;
+			case NW_VAR_STR:
+				pos += strtnw(vars[i].str, nw);
+				break;
+		}
+	}
+	write_msg(sock, nw, target);
+}
+
+/**
+ * Reads a frame from network. Returns an invalidated network_data_t (with srcaddr)
+ */ 
+network_data_t read_msg(int sock, nw_var_type_t * var_types, nw_var_t * vars, int num_vars) {
+	network_data_t nw = read_frame(sock);
+	if(nw.valid()) {	
+		int pos = 0;
+		for(int i=0;i<num_vars) {
+			switch(var_types[i]) {
+				case NW_VAR_FLOAT:
+					pos += nwtf((char*)nw.data+pos, &vars[i].f);
+					break;
+				case NW_VAR_UINT16:
+					uint16_t nwi;
+					memcpy(&nwi, (char*)nw.data+pos,sizeof(uint16_t));
+					vars[i].i = ntohs(nwi);
+					pos += sizeof(uint16_t);
+					break;
+				case NW_VAR_CHAR:
+					vars[i].c = (char*)nw.data[pos];
+					pos += sizeof(char);
+					break;
+				case NW_VAR_STR:
+					vars[i].str = malloc(PAYLOAD_SIZE); //Maximum possible size
+					pos += nwtstr(nw, vars[i].str);
+					break;
+			}
+		}
+		nw.invalidate();
+	}
+	return nw;
+}
+
+/***************************
+ * static functions
+ **************************/
 
 /**
  * Reads a frame
@@ -170,10 +178,9 @@ static int ftnw(float f, void * nw) {
 	return sizeof(nw_order)+sizeof(unsigned char);
 }
 
-static float nwtf(void * nw) {
+static int nwtf(void * nw, float * f) {
 	uint16_t integer_part;
 	unsigned char decimal_part;
-	float f;
 	bool negative = false;
 	
 	integer_part = ntohs(*((uint16_t*)nw));
@@ -184,11 +191,28 @@ static float nwtf(void * nw) {
 		decimal_part -=100;
 	}
 
-	f = integer_part + (float)decimal_part/100.0;
+	*f = integer_part + (float)decimal_part/100.0;
 	if(negative)
-		f *= -1.0;
+		*f *= -1.0;
 
-	return f;
+	return sizeof(uint16_t)+sizeof(unsigned char);
+}
+
+static int strtnw(char * str, void * nw) {
+	int len = strlen(str);
+	((char*)nw)[0] = len;
+	memcpy((char*)nw+1,str,len);
+	return len+1;
+}
+
+/**
+ * Reads a string from the network buffer and writes to str.
+ */ 
+static int nwtstr(void * nw, char * str) {
+	int len = ((char*)nw)[0];
+	str[len] = 0x00;
+	memcpy(str,(char*)nw+1,len);
+	return len+1;
 }
 
 void test_network() {
@@ -201,7 +225,8 @@ void test_network() {
 		float f = (float)n/(float)100.0;
 		printf("Converting float %f...",f);
 		if(ftnw(f, nw)==3) {
-			float b = nwtf(nw);
+			float b;
+			nwtf(nw,&b);
 			if(fabs(f-b) > 0.019) {
 				printf("diff: %f (b: %f)\n", fabs(f-b),b);
 				++errors;
@@ -220,7 +245,8 @@ void test_network() {
 		f *=-1;
 		printf("Converting float %f...",f);
 		if(ftnw(f, nw)==3) {
-			float b = nwtf(nw);
+			float b;
+			nwtf(nw, &b);
 			if(fabs(f-b) > 0.019) {
 				printf("diff: %f (b: %f)\n", fabs(f-b),b);
 				++errors;
@@ -233,3 +259,4 @@ void test_network() {
 	printf("Number of errors: %d/2000\n",errors);
 	free(nw);
 }
+

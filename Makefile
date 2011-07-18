@@ -1,4 +1,4 @@
-OBJS = main.o render.o network.o texture.o resource.o player.o logic.o render_object.o level.o
+OBJS = main.o render.o network.o texture.o resource.o player.o logic.o render_object.o level.o sha1.o network_lib.o
 SPRITES = dispencer.png tail.png
 CFLAGS += -Wall `sdl-config --cflags` -g
 LDFLAGS += `sdl-config --libs`  -lGL -lSDL_image
@@ -23,3 +23,7 @@ dispencer.png: $(wildcard gfx_parts/dispencer_*.png)
 
 tail.png: $(wildcard gfx_parts/tail_*.png)
 	./makesprite gfx/tail.png
+
+test_network: sha1.o network_lib.o network_test.o
+	$(CXX) network_lib.o sha1.o network_test.o $(LDFLAGS) -o $@
+	

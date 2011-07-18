@@ -1,3 +1,9 @@
+#include "common.h"
+#include "network.h"
+#include "render.h"
+#include "player.h"
+#include "logic.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/time.h>
@@ -9,12 +15,6 @@
 #include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
-
-#include "common.h"
-#include "network.h"
-#include "render.h"
-#include "player.h"
-#include "logic.h"
 
 #define CMD(str) strncmp(data,str,3) == 0
 
@@ -200,8 +200,3 @@ void request_slot(int i) {
 	send_msg(buffer);
 }
 
-void send_msg(const char * buffer) {
-	if(sendto(sockfd, buffer, strlen(buffer)+1, 0, (sockaddr*) &broadcast_addr, sizeof(sockaddr_in))<0) {
-		perror("Falid to send massage");
-	}
-}

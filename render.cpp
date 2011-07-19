@@ -204,7 +204,7 @@ void render(double dt){
 }
 
 float radians_to_degrees(double rad) {
-	return (float) (rad * (180/PI));
+	return (float) (rad * (180/M_PI));
 }
 
 static void render_walls(double dt) {
@@ -236,10 +236,10 @@ static void render_walls(double dt) {
 
 float period(float rad) {
 	if(rad > 0) 
-		return fmod(rad, 2.0*PI);
+		return fmod(rad, 2.0*M_PI);
 	else {
 		do {
-			rad+=2.0*PI;
+			rad+=2.0*M_PI;
 		} while(rad < 0);
 		return rad;
 	}
@@ -249,7 +249,7 @@ static void glCircle3i(GLint x, GLint y, GLint radius) {
 	float angle; 
 	glBegin(GL_LINE_LOOP); 
 		for(int i = 0; i < 100; i++) { 
-			angle = i*2*PI/100.0f; 
+			angle = i*2*M_PI/100.0f; 
 			glVertex3f(x + (cos(angle) * radius), y + (sin(angle) * radius),0.0f); 
 		} 
 	glEnd(); 

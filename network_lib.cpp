@@ -7,7 +7,6 @@
 #include <sys/types.h>
 #include <sys/select.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <string.h>
@@ -18,6 +17,8 @@
 
 #include "sha1.h"
 #include "network_lib.h"
+#include "network.h"
+#include "protocol.h"
 
 /*****
  * Contains network function shared by client and server
@@ -27,25 +28,40 @@
 static bool cmp_hash(char hash[HASH_SIZE],char * str,int len);
 static void get_hash(char hash[HASH_SIZE],char * str,int len);
 
-static void send(int sockfd, void * data, sockaddr_in * to_addr);
-static void write_msg(int sock, void * data, sockaddr_in * to_addr);
-static network_data_t read_frame(int sock);
+static bool get_frame(int sock, network_data_t * nd);
 
 static int ftnw(float f, void * nw);
 static int nwtf(void * nw, float * f);
 static int strtnw(char * str, void * nw);
 static int nwtstr(void * nw, char * str);
 
-void send_msg(int sock, sockaddr_in * target, nw_var_type_t * var_types, nw_var_t * vars, int num_vars) {
+/**
+ * Sends a frame on the network. 
+ * vars[0] will be overwritten with the protocol cmd, put nothing or irrelevant data there
+ */
+void send_frame(int sock, sockaddr_in * target, nw_cmd_t cmd, nw_var_t * vars) {
 	char * nw = (char*)malloc(FRAME_SIZE);
-	int pos = 0;	
+	int pos = HASH_SIZE;	
+	uint16_t nwi;
+
+	/**
+	 * Select protocol cmd and write cmd to first pos
+	 */
+	if(protocol[cmd].cmd != cmd)
+		fprintf(stderr, "WARNING: Protocol cmd #%d does not match value in frame_t struct\n",cmd);
+
+	const int num_vars = protocol[cmd].num_vars;
+	const nw_var_type_t * var_types = protocol[cmd].var_types;
+	nw[pos] = cmd;
+	pos+=sizeof(char);
+
 	for(int i=0; i < num_vars; ++i) {
 		switch(var_types[i]) {
 			case NW_VAR_FLOAT:
 				pos += ftnw(vars[i].f,nw+pos);
 				break;
 			case NW_VAR_UINT16:
-				uint16_t nwi = htons(vars[i].i);
+				nwi = htons(vars[i].i);
 				memcpy(nw+pos,&nwi,sizeof(uint16_t));
 				pos += sizeof(uint16_t);
 				break;
@@ -58,77 +74,89 @@ void send_msg(int sock, sockaddr_in * target, nw_var_type_t * var_types, nw_var_
 				break;
 		}
 	}
-	write_msg(sock, nw, target);
+
+	char hash[41];
+	get_hash(hash,(char*)nw+HASH_SIZE,PAYLOAD_SIZE);
+	memcpy(nw,hash,HASH_SIZE);
+	send_raw(sock, nw, target);
+	free(nw);
 }
 
 /**
- * Reads a frame from network. Returns an invalidated network_data_t (with srcaddr)
+ * Reads a frame from network and writes the result to vars.
+ * Returns the frame (with data about protocol cmd and var types)
+ * Fills addr with relevant address data about src
  */ 
-network_data_t read_msg(int sock, nw_var_type_t * var_types, nw_var_t * vars, int num_vars) {
-	network_data_t nw = read_frame(sock);
-	if(nw.valid()) {	
+frame_t read_msg(int sock, , nw_var_t * vars, addr_t * addr) {
+	network_data_t nw;
+	if(read_frame(sock,&nw)) {
 		int pos = 0;
-		for(int i=0;i<num_vars) {
+		uint16_t nwi;
+		int cmd;
+
+		//Read protocol cmd:
+		cmd = ((char*)nw.data)[0];
+		pos += sizeof(char);
+
+		const nw_var_type_t * var_types = protocol[cmd].var_types;
+		const int num_vars = protocol[cmd].num_vars;
+
+		for(int i=0;i<num_vars;++i) {
 			switch(var_types[i]) {
 				case NW_VAR_FLOAT:
 					pos += nwtf((char*)nw.data+pos, &vars[i].f);
 					break;
 				case NW_VAR_UINT16:
-					uint16_t nwi;
 					memcpy(&nwi, (char*)nw.data+pos,sizeof(uint16_t));
 					vars[i].i = ntohs(nwi);
 					pos += sizeof(uint16_t);
 					break;
 				case NW_VAR_CHAR:
-					vars[i].c = (char*)nw.data[pos];
+					vars[i].c = ((char*)nw.data)[pos];
 					pos += sizeof(char);
 					break;
 				case NW_VAR_STR:
-					vars[i].str = malloc(PAYLOAD_SIZE); //Maximum possible size
-					pos += nwtstr(nw, vars[i].str);
+					vars[i].str = (char*)malloc(PAYLOAD_SIZE); //Maximum possible size
+					pos += nwtstr(nw.data, vars[i].str);
 					break;
 			}
 		}
 		nw.invalidate();
 	}
-	return nw;
+	*addr = nw.addr;
+	frame_t f = 
+	return ;
 }
 
 /***************************
  * static functions
  **************************/
 
+
 /**
- * Reads a frame
+ * Recvs next frame from socket
  */
-static network_data_t read_frame(int sock) {
-	network_data_t nd;
+static bool get_frame(int sock, network_data_t * nd) {
+
 	char buffer[FRAME_SIZE];
 
-	int r = recvfrom(sock,buffer,FRAME_SIZE, 0, &nd.src_addr, &nd.src_addr_len);
+	int r = read_raw(sock,buffer,FRAME_SIZE, 0, &nd->addr.addr, &nd->addr.len);
 	if(r != FRAME_SIZE) {
 		fprintf(stderr,"Invalid frame size recived");
-		nd.invalidate();
-		return nd;
+		nd->invalidate();
+		return false;
 	}
 	if(cmp_hash(buffer,buffer+HASH_SIZE,PAYLOAD_SIZE)) {
-		memcpy(nd.data,buffer+HASH_SIZE,PAYLOAD_SIZE);
+		memcpy(nd->data,buffer+HASH_SIZE,PAYLOAD_SIZE);
+		return true;
 	} else {
 		fprintf(stderr,"Incorrect hash for frame.\n");
-		nd.invalidate();
-		return nd;
+		nd->invalidate();
+		return false; 
 	}
-	return nd;
 }
 
-static void write_msg(int sock, void * data, sockaddr_in * to_addr) {
-		char * buffer =(char*) malloc(FRAME_SIZE);
-		char hash[41];
-		get_hash(hash,(char*)data,PAYLOAD_SIZE);
-		memcpy(buffer,hash,HASH_SIZE);
-		memcpy(buffer+HASH_SIZE, data, PAYLOAD_SIZE);
-		send(sock, data, to_addr);
-		free(buffer);	
+static void write_frame(int sock, void * data, sockaddr_in * to_addr) {
 }
 
 static void get_hash(char * hexstring,char * str, int len) {
@@ -143,11 +171,6 @@ static bool cmp_hash(char hash[HASH_SIZE],char * str,int len) {
 	return (strncmp(hash,hexstring,HASH_SIZE) == 0);
 }
 
-static void send(int sockfd, void * data, sockaddr_in * to_addr) {
-	if(sendto(sockfd, data, PAYLOAD_SIZE, 0, (sockaddr*) to_addr, sizeof(sockaddr_in))<0) {
-		perror("Failed to send message");
-	}
-}
 
 /** 
  * Converts the float to a network format and write it to nw, returns the number of bytes written (probably 3)
@@ -258,5 +281,63 @@ void test_network() {
 	}
 	printf("Number of errors: %d/2000\n",errors);
 	free(nw);
+	
 }
 
+
+/***************
+ * nw_var_t
+ **************/
+
+nw_var_t::nw_var_t() : str(NULL) {};
+
+nw_var_t::~nw_var_t() {
+	if(str!=NULL)
+		free(str);
+}
+
+/****************
+ * network_data_t
+ ***************/
+
+
+network_data_t::network_data_t() {
+	_valid = true;
+	data = malloc(PAYLOAD_SIZE);
+}
+
+network_data_t::network_data_t(network_data_t &nd) {
+	data = nd.data;
+	addr = nd.addr;
+	_valid = nd._valid;
+	nd._valid = false;
+	nd.data = NULL;
+	_valid = true;
+}
+
+network_data_t::~network_data_t() {
+	if(_valid)
+		free(data);
+}
+
+char &network_data_t::operator[] (int index) {
+	if(_valid && index < PAYLOAD_SIZE ) {
+		return *((char*)data + index);
+	} else if(!_valid) {
+		throw "Reading from invalidated network data";
+	} else  {
+		throw "Index out of bounds";
+	}
+}
+
+void network_data_t::invalidate() {
+	if(_valid) {
+		_valid = false;
+		free(data);
+		data = NULL;
+	}
+}
+
+bool network_data_t::valid() {
+	return _valid;
+}

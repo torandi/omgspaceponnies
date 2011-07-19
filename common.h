@@ -11,7 +11,7 @@
 
 #define PORT 7412
 
-#define PI 3.14159265
+//#define PI 3.14159265
 
 #define SPEED 300.0f
 

@@ -1,7 +1,8 @@
-#ifndef NETWORK_LIB_INC
-#define NETWORK_LIB_INC
+#ifndef NETWORK_LIB_H
+#define NETWORK_LIB_H
 
-
+#include <stdint.h>
+#include <arpa/inet.h>
 
 #define FRAME_SIZE 32
 #define HASH_SIZE 4
@@ -16,65 +17,35 @@ struct nw_var_t {
 	char c;
 	char * str;
 
-	nw_var_t() : str(NULL) {};
+	nw_var_t();
 
-	~nw_var_t() {
-		if(str!=NULL)
-			free(str);
-	}
+	~nw_var_t();
+};
+
+struct addr_t {
+	sockaddr addr;
+	socklen_t len;
+
+	addr_t() {
+		len = sizeof(addr);	
+	};
 };
 
 struct network_data_t {
 	void * data;
-	sockaddr src_addr;
-	socklen_t src_addr_len;
-		
+	addr_t addr;	
+
 private:
 	bool _valid;
 
 public:
 
-	network_data_t() {
-		_valid = true;
-		data = malloc(PAYLOAD_SIZE);
-	}
-
-	network_data_t(network_data_t &nd) {
-		data = nd.data;
-		src_addr = nd.src_addr;
-		src_addr_len = nd.src_addr_len;
-		_valid = nd._valid;
-		nd._valid = false;
-		nd.data = NULL;
-		_valid = true;
-	}
-
-	~network_data_t() {
-		if(_valid)
-			free(data);
-	}
-
-	char &operator[] (int index) {
-		if(_valid && index < PAYLOAD_SIZE ) {
-			return *((char*)data + index);
-		} else if(!_valid) {
-			throw "Reading from invalidated network data";
-		} else  {
-			throw "Index out of bounds";
-		}
-	}
-
-	void invalidate() {
-		if(_valid) {
-			_valid = false;
-			free(data);
-			data = NULL;
-		}
-	}
-
-	bool valid() {
-		return _valid;
-	}
+	network_data_t();
+	network_data_t(network_data_t &nd);
+	~network_data_t();
+	char &operator[] (int index);
+	void invalidate();
+	bool valid();
 };
 
 enum nw_var_type_t {
@@ -84,8 +55,15 @@ enum nw_var_type_t {
 	NW_VAR_STR
 };
 
+
 void test_network();
 
-void send_msg(int sock, sockaddr_in * target, nw_var_type_t * var_types, nw_var_t * vars, int num_vars);
+/**
+ * Sends a frame on the network. 
+ * vars[0] will be overwritten with the protocol cmd, put nothing or irrelevant data there
+ */
+void send_frame(int sock, sockaddr_in * target, nw_var_type_t * var_types, nw_var_t * vars, int num_vars);
+
+addr_t read_frame(int sock, nw_var_type_t * var_types, nw_var_t * vars, int num_vars);
 
 #endif

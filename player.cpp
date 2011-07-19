@@ -24,7 +24,7 @@ Player::Player(int _id) {
 void Player::init(int _id) {
 	char texture[64];
 
-	angle = PI;
+	angle = M_PI;
 	power = 1.0;
 	fire = false;
 	id = _id;
@@ -32,7 +32,7 @@ void Player::init(int _id) {
 	da = 0;
 	full_shield = false;
 
-	shield_angle = PI;
+	shield_angle = M_PI;
 
 	velocity = vector_t(0.0f,0.0f);
 
@@ -81,7 +81,7 @@ void Player::spawn() {
 	dead = 0;
 	power = 1.0;
 	da = 0;
-	angle = PI;
+	angle = M_PI;
 }
 
 void Player::render(double dt) {
@@ -92,7 +92,7 @@ void Player::render(double dt) {
 	glPushMatrix();
 
 	glTranslatef(pos.x, pos.y, 0);
-	glRotatef(radians_to_degrees(angle+PI/2.0), 0, 0, 1.0);
+	glRotatef(radians_to_degrees(angle+M_PI_2), 0, 0, 1.0);
 	glTranslatef(-PLAYER_W*0.5,-PLAYER_H*0.5, 0);
 
 	//Draw textures:
@@ -124,9 +124,9 @@ void Player::render(double dt) {
 			glEnd();
 		} else {
 			float sx1, sy1, sx2, sy2;
-			shield_coords(shield_angle-PI/4.0,sx1,sy1);
-			shield_coords(shield_angle+PI/4.0,sx2,sy2);
-			int corner = (int)floor(period(shield_angle)/(PI/2.0));
+			shield_coords(shield_angle-M_PI_4,sx1,sy1);
+			shield_coords(shield_angle+M_PI_4,sx2,sy2);
+			int corner = (int)floor(period(shield_angle)/(M_PI_2));
 			float cx, cy;
 
 			switch(corner) {
@@ -167,14 +167,14 @@ void Player::render(double dt) {
 }
 
 void Player::shield_coords(float a, float &x, float &y) {
-	a = period(a+PI/2.0);
-	if(a <= PI/4.0 || a >= 7.0*PI/4.0) {
+	a = period(a+M_PI_2);
+	if(a <= M_PI_4 || a >= 7.0*M_PI_4) {
 		x = 1.0;
 		y = tan(a);
-	} else if(a > PI/4.0 && a <= 3.0*PI/4.0) {
+	} else if(a > M_PI_4 && a <= 3.0*M_PI_4) {
 		x = cos(a)/sin(a);
 		y = 1;
-	} else if(a > 3.0*PI/4.0 && a <= 5.0*PI/4.0) {
+	} else if(a > 3.0*M_PI_4 && a <= 5.0*M_PI_4) {
 		x = -1.0;
 		y = -tan(a);
 	} else {
@@ -192,8 +192,8 @@ void Player::render_fire(double dt) {
 		glLineWidth(2.0f);
 		glBegin(GL_LINES);
 		for(int i=0;i<12;++i) {
-			float dx = i*cos(angle+PI/2.0) - 6*cos(angle+PI/2.0) + cos(angle)*PLAYER_H/2.0;
-			float dy = i*sin(angle+PI/2.0) - 6*sin(angle+PI/2.0) + sin(angle)*PLAYER_H/2.0;
+			float dx = i*cos(angle+M_PI_2) - 6*cos(angle+M_PI_2) + cos(angle)*PLAYER_H/2.0;
+			float dy = i*sin(angle+M_PI_2) - 6*sin(angle+M_PI_2) + sin(angle)*PLAYER_H/2.0;
 			glColor3f(rbcolors[i][0],rbcolors[i][1],rbcolors[i][2]);
 
 			glVertex2f(pos.x+dx, pos.y+dy);
@@ -322,5 +322,5 @@ vector_t Player::collision_point(int i, const float * a) const{
 			v.y += ay-18.0;
 			break;
 	}
-	return pos+v.rotate(*a-PI*0.5);
+	return pos+v.rotate(*a-M_PI*0.5);
 }

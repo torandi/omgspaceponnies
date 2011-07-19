@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "common.h"
-#include "network.h"
+#include "client.h"
 #include "render.h"
 #include "logic.h"
 #include "level.h"

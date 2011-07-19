@@ -48,16 +48,16 @@ void logic(double dt) {
 
 		if(keys[SDLK_d] || keys[SDLK_e]) {
 			me->accelerate(vector_t(
-				cos(me->angle+PI/2.0),
-				sin(me->angle+PI/2.0)
+				cos(me->angle+M_PI/2.0),
+				sin(me->angle+M_PI/2.0)
 				) * s);
 			me->current_base_texture = TEXTURE_LEFT;
 		}
 
 		if(keys[SDLK_a]) {
 			me->accelerate(vector_t(
-				cos(me->angle+PI*1.5),
-				sin(me->angle+PI*1.5)
+				cos(me->angle+M_PI*1.5),
+				sin(me->angle+M_PI*1.5)
 				) * s);
 			me->current_base_texture = TEXTURE_RIGHT;
 		}

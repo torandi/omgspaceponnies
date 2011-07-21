@@ -2,7 +2,7 @@
 #define NETWORK_LIB_H
 
 #include <stdint.h>
-#include <arpa/inet.h>
+#include "socket.h"
 
 #define FRAME_SIZE 32
 #define HASH_SIZE 4
@@ -20,15 +20,6 @@ struct nw_var_t {
 	nw_var_t();
 
 	~nw_var_t();
-};
-
-struct addr_t {
-	sockaddr addr;
-	socklen_t len;
-
-	addr_t() {
-		len = sizeof(addr);	
-	};
 };
 
 struct network_data_t {

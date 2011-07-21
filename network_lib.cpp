@@ -87,9 +87,9 @@ void send_frame(int sock, sockaddr_in * target, nw_cmd_t cmd, nw_var_t * vars) {
  * Returns the frame (with data about protocol cmd and var types)
  * Fills addr with relevant address data about src
  */ 
-frame_t read_msg(int sock, , nw_var_t * vars, addr_t * addr) {
+frame_t read_frame(int sock, nw_var_t * vars, addr_t * addr) {
 	network_data_t nw;
-	if(read_frame(sock,&nw)) {
+	if(get_frame(sock,&nw)) {
 		int pos = 0;
 		uint16_t nwi;
 		int cmd;
@@ -124,8 +124,7 @@ frame_t read_msg(int sock, , nw_var_t * vars, addr_t * addr) {
 		nw.invalidate();
 	}
 	*addr = nw.addr;
-	frame_t f = 
-	return ;
+	return {cmd, num_vars, nw_var_type_t};
 }
 
 /***************************
@@ -154,9 +153,6 @@ static bool get_frame(int sock, network_data_t * nd) {
 		nd->invalidate();
 		return false; 
 	}
-}
-
-static void write_frame(int sock, void * data, sockaddr_in * to_addr) {
 }
 
 static void get_hash(char * hexstring,char * str, int len) {

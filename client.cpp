@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "common.h"
+#include "network.h"
 #include "client.h"
 #include "render.h"
 #include "logic.h"
@@ -16,7 +17,6 @@ bool keys[SDLK_LAST];
 float step = 0.0f;
 int verbose_flag = 0;
 FILE* verbose = NULL;
-int port = PORT;
 bool fullscreen = false;
 
 std::vector<Player> players
@@ -126,8 +126,8 @@ int main(int argc, char* argv[]){
 		case 0:
 			break;
 		case 'p':
-			port = atoi(optarg);
-			printf("Set port to %i\n", port);
+			network_port = atoi(optarg);
+			printf("Set port to %i\n", network_port);
 			break;
 		case 'f':
 			fullscreen= true;

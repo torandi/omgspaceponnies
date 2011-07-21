@@ -1,7 +1,6 @@
 #ifndef NETWORK_H
-	#define NETWORK_H
-	//Port to broadcast on
-	extern int port;
+#define NETWORK_H
+	extern int network_port;
 
 	//Default port
 	#define PORT 7412

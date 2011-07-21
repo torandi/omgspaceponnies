@@ -7,14 +7,33 @@
 #ifndef SOCKET_H
 #define SOCKET_H
 
-#include "network_lib.h"
 
 #include <stdlib.h>
+#include <arpa/inet.h>
+#include <string.h>
+
+struct addr_t {
+	sockaddr_in addr;
+	socklen_t len;
+
+	addr_t() {
+		bzero((char *) &addr, sizeof(addr));
+		len = sizeof(addr);	
+	};
+};
 
 /**
  * Reads raw data from the socket
  */
-int read_raw(int sock,void * buffer,size_t len, int flags, addr_t * src_addr);
-void send_raw(int sockfd, void * data, sockaddr_in * to_addr);
+ssize_t read_raw(int sock,void * buffer,size_t len, int flags, addr_t * src_addr);
+void send_raw(int sockfd, void * data, const addr_t &to_addr);
+
+int create_socket(int port, bool broadcast);
+void close_socket(int sock);
+bool data_available(int sock);
+
+addr_t create_addr(uint32_t address, int port);
+addr_t create_addr_from_hn(const char * hostname, int port);
+addr_t broadcast_addr(int port);
 
 #endif

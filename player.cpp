@@ -12,22 +12,22 @@
 #include <sys/time.h>
 
 
-Player::Player(const char * n, int _id) {
+Player::Player(const char * n, int _team) {
 	nick = std::string(n);
-	init(_id);
+	init(_team);
 }
 
-Player::Player(int _id) {
-	init(_id);
+Player::Player(int _team) {
+	init(_team);
 }
 
-void Player::init(int _id) {
+void Player::init(int _team) {
 	char texture[64];
 
 	angle = M_PI;
 	power = 1.0;
 	fire = false;
-	id = _id;
+	team = _team;
 	dead = 0;
 	da = 0;
 	full_shield = false;
@@ -45,7 +45,7 @@ void Player::init(int _id) {
 	shield = new Texture("gfx/shield.png",1); 
 
 	//Base
-	sprintf(texture,"gfx/player%i/base.png", id+1);
+	sprintf(texture,"gfx/player%i/base.png", team+1);
 	textures[TEXTURE_BASE] = RenderObject(texture, 1, 25, size);
 
 	//Dash

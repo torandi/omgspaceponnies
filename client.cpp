@@ -19,7 +19,7 @@ int verbose_flag = 0;
 FILE* verbose = NULL;
 bool fullscreen = false;
 
-std::vector<Player> players
+std::vector<Player> players;
 
 Player * me = NULL; 
 
@@ -102,7 +102,7 @@ static void poll(bool* run){
 
 
 static void show_usage(){
-  fprintf(stderr, "./omgponnies [options] nick\n");
+  fprintf(stderr, "./omgponnies [options] nick team(1-4)\n");
   fprintf(stderr, "  -p, --port=PORT Use PORT for communication (default: %d).\n", PORT);
   fprintf(stderr, "  -h, --help      This help text.\n");
 }
@@ -140,7 +140,14 @@ int main(int argc, char* argv[]){
 	}
   }
 
-	myname = "PLAJUR";
+  if ( argc - optind != 2 ){
+	show_usage();
+    exit(1);
+  }
+
+	players.push_back(Player(argv[option_index++], atoi(argv[option_index++])+1));
+	me = &players[0];
+
 
   /* verbose dst */
   if ( verbose_flag ){

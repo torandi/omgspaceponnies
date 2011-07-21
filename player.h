@@ -44,6 +44,8 @@ struct Player {
 
 	int id;
 
+	int team;
+
 	float shield_angle;
 
 	bool full_shield;
@@ -60,9 +62,7 @@ struct Player {
 	float power;
 
 
-	Player(const char * nick, int _id);
-	Player(int _id);
-
+	Player(const char * nick, int _team);
 
 	void spawn();
 
@@ -81,7 +81,7 @@ struct Player {
 	vector_t collision_point(int i, const float * a = NULL) const;
 
 private:
-	void init(int _id);
+	void init(int _team);
 
 	void shield_coords(float a, float &x, float &y);
 };

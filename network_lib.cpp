@@ -39,7 +39,7 @@ static int nwtstr(void * nw, char * str);
  * Sends a frame on the network. 
  * vars[0] will be overwritten with the protocol cmd, put nothing or irrelevant data there
  */
-void send_frame(int sock, sockaddr_in * target, nw_cmd_t cmd, nw_var_t * vars) {
+void send_frame(int sock, const addr_t &target, nw_cmd_t cmd, nw_var_t * vars) {
 	char * nw = (char*)malloc(FRAME_SIZE);
 	int pos = HASH_SIZE;	
 	uint16_t nwi;
@@ -121,10 +121,15 @@ frame_t read_frame(int sock, nw_var_t * vars, addr_t * addr) {
 					break;
 			}
 		}
-		nw.invalidate();
+
+		*addr = nw.addr;
+		frame_t f = {(nw_cmd_t)cmd, num_vars, {}};
+		memcpy(f.var_types,var_types,num_vars*sizeof(nw_var_type_t));
+		return f;
+	} else {
+		frame_t f = {NW_CMD_INVALID, 0, {}};
+		return f;
 	}
-	*addr = nw.addr;
-	return {cmd, num_vars, nw_var_type_t};
 }
 
 /***************************
@@ -139,7 +144,7 @@ static bool get_frame(int sock, network_data_t * nd) {
 
 	char buffer[FRAME_SIZE];
 
-	int r = read_raw(sock,buffer,FRAME_SIZE, 0, &nd->addr.addr, &nd->addr.len);
+	int r = read_raw(sock,buffer,FRAME_SIZE, 0, &nd->addr);
 	if(r != FRAME_SIZE) {
 		fprintf(stderr,"Invalid frame size recived");
 		nd->invalidate();

@@ -24,6 +24,5 @@ extern bool keys[SDLK_LAST];
 
 extern bool ready;
 
-extern char * myname;
 
 #endif /* CLIENT_H */

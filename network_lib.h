@@ -8,6 +8,15 @@
 #define HASH_SIZE 4
 #define PAYLOAD_SIZE 28
 
+enum nw_var_type_t {
+	NW_VAR_FLOAT,
+	NW_VAR_UINT16,
+	NW_VAR_CHAR,
+	NW_VAR_STR
+};
+
+#include "protocol.h"
+
 /**
  * A variable from/to network traffic
  */
@@ -39,13 +48,6 @@ public:
 	bool valid();
 };
 
-enum nw_var_type_t {
-	NW_VAR_FLOAT,
-	NW_VAR_UINT16,
-	NW_VAR_CHAR,
-	NW_VAR_STR
-};
-
 
 void test_network();
 
@@ -53,8 +55,7 @@ void test_network();
  * Sends a frame on the network. 
  * vars[0] will be overwritten with the protocol cmd, put nothing or irrelevant data there
  */
-void send_frame(int sock, sockaddr_in * target, nw_var_type_t * var_types, nw_var_t * vars, int num_vars);
-
-addr_t read_frame(int sock, nw_var_type_t * var_types, nw_var_t * vars, int num_vars);
+void send_frame(int sock, const addr_t &target, nw_cmd_t cmd, nw_var_t * vars);
+frame_t read_frame(int sock, nw_var_t * vars, addr_t * addr);
 
 #endif

@@ -5,5 +5,9 @@
 	//Default port
 	#define PORT 7412
 
+	void init_network();
+	void network();
+	void send_player(const Player &p);
+	void send_fire(const Player &p);
 
 #endif

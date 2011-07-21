@@ -1,19 +1,10 @@
-/*********************************
- * This file contains functions to 
- * abstract the socket useage.
- *********************************/
-
-
 #ifndef NETWORK_H
-#define NETWORK_H
+	#define NETWORK_H
+	//Port to broadcast on
+	extern int port;
 
-#include "network_lib.h"
+	//Default port
+	#define PORT 7412
 
-#include <stdlib.h>
-
-/**
- * Reads raw data from the socket
- */
-int read_raw(int sock,void * buffer,size_t len, int flags, addr_t * src_addr);
 
 #endif

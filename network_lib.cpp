@@ -17,7 +17,7 @@
 
 #include "sha1.h"
 #include "network_lib.h"
-#include "network.h"
+#include "socket.h"
 #include "protocol.h"
 
 /*****

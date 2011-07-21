@@ -1,12 +1,15 @@
-OBJS = main.o render.o network.o texture.o resource.o player.o logic.o render_object.o level.o sha1.o network_lib.o
+OBJS = render.o network.h texture.o resource.o player.o logic.o render_object.o level.o sha1.o network_lib.o
 SPRITES = dispencer.png tail.png
 CFLAGS += -Wall `sdl-config --cflags` -g
 LDFLAGS += `sdl-config --libs`  -lGL -lSDL_image
 
-all: omgspaceponies
+all: omgspaceponies omgserver
+ 
+omgspaceponies: client.o $(OBJS) $(SPRITES)
+	$(CXX) client.o $(OBJS) $(LDFLAGS) -o $@
 
-omgspaceponies: $(OBJS) $(SPRITES)
-	$(CXX) $(OBJS) $(LDFLAGS) -o $@
+omgserver: server.o $(OBJS)
+	$(CXX) server.o $(OBJS) $(LDFLAGS) -o $@
 
 clean:
 	rm -rf *.o omgspaceponies 

@@ -1,202 +1,194 @@
-#include "common.h"
-#include "network.h"
-#include "render.h"
-#include "player.h"
-#include "logic.h"
-
-#include <stdlib.h>
-#include <stdio.h>
+#include <time.h>
 #include <sys/time.h>
-#include <sys/types.h>
-#include <sys/select.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <fcntl.h>
-#include <string.h>
 #include <unistd.h>
+#include <SDL/SDL.h>
+#include <getopt.h>
+#include <vector>
 
-#define CMD(str) strncmp(data,str,3) == 0
+#include "common.h"
+#include "client.h"
+#include "render.h"
+#include "logic.h"
+#include "level.h"
 
-/**
- * Protocol:
- */
+bool keys[SDLK_LAST];
 
-static struct sockaddr_in broadcast_addr;
-static int sockfd;
-static fd_set readset;
-static struct timeval tv;
+float step = 0.0f;
+int verbose_flag = 0;
+FILE* verbose = NULL;
+int port = PORT;
+bool fullscreen = false;
 
-static int requested_slot = -1;
-static double request_sent_time;
+std::vector<Player> players
 
-static enum {
-	STATE_INIT,
-	STATE_REQUESTED,
-	STATE_PLAYING
-} state;
+Player * me = NULL; 
 
-static Player * get_or_create_plajur(int id) {
-	if(id != me->id && id < NUM_PLAYERS) {
-		Player * p = players[id];
-		if(p == NULL)
-			p = create_player("PLAJUR", id);
-		return p;
-	} else {
-		return NULL;
-	}
+bool ready = false;
+
+vector_t mouse;
+
+char * myname;
+
+static void setup(){
+	render_init(1024, 768, fullscreen);
+	init_level();
+	init_network();
 }
 
-void init_network() {
-
-	state = STATE_INIT;
-
-	sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-	if(sockfd < 0) {
-		perror("network(): create socket");
-		exit(1);
-	}
-
-	int one = 1;
-	if(setsockopt(sockfd, SOL_SOCKET, SO_BROADCAST, &one, sizeof(int)) == -1) {
-		perror("network(): setsockopt SO_BROADCAST");
-		exit(1);
-	}
-
-	if(setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(int)) == -1) {
-		perror("network(): setsockopt SO_REUSEADDR");
-		exit(1);
-	}
-
-	int x;
-	x=fcntl(sockfd,F_GETFL,0);
-	fcntl(sockfd,F_SETFL,x | O_NONBLOCK);
-
-	broadcast_addr.sin_family = AF_INET;
-	broadcast_addr.sin_port = htons(port);
-	broadcast_addr.sin_addr.s_addr = htonl(INADDR_BROADCAST);	
-
-	if(bind(sockfd, (sockaddr *) &broadcast_addr, sizeof(sockaddr_in)) < 0) {
-		perror("network(): bind");
-		exit(1);
-	}
-
-	request_slot(0);
+static void cleanup(){
+  SDL_Quit();
 }
 
-/**
- * Handles network traffic.
- */
-void network() {
-	char buffer[1024];
-	size_t size;
-	struct sockaddr src_addr;
-	socklen_t addrlen;
+static void poll(bool* run){
 
-	FD_ZERO(&readset);
-	FD_SET(sockfd,&readset);
+	SDL_Event event;
+	while ( SDL_PollEvent(&event) ){
+		if(ready) {
+			switch (event.type){
+				case SDL_MOUSEBUTTONDOWN:
+					if(event.button.button == SDL_BUTTON_LEFT)
+						me->fire = true;
+					else if(event.button.button == SDL_BUTTON_WHEELUP)
+						me->shield_angle+=0.3;
+					else if(event.button.button == SDL_BUTTON_WHEELDOWN)
+						me->shield_angle-=0.3;
+					else if(event.button.button == SDL_BUTTON_RIGHT)
+						me->full_shield = true;
+					break;
 
-	tv.tv_sec = 0;
-	tv.tv_usec = 0;
+				case SDL_MOUSEBUTTONUP:
+					if(event.button.button == SDL_BUTTON_LEFT)
+						me->fire = false;
+					else if(event.button.button == SDL_BUTTON_RIGHT)
+						me->full_shield = false;
+					break;
 
-	if(select(sockfd+1,&readset,NULL,NULL,&tv) > 0) {
-		size = recvfrom(sockfd, buffer, 1024, 0, &src_addr, &addrlen);
-		//printf(">> %s\n", buffer);
-		if(strncmp(buffer,"omg ",4)==0) {
-				char * data = buffer+4;
-				switch(state) {
-					case STATE_INIT:
-						break;
-					case STATE_REQUESTED:
-						if(CMD("nak")) {
-							int slot;
-							sscanf(data, "nak %d", &slot);
-							printf("Recived nak for slot %i\n", slot);
-							++slot;
-							if(slot < 4) 
-								request_slot(slot);
-							else {
-								printf("No free slots, shutting down");
-								exit(2);
-							}
-						}
-						break;
-					case STATE_PLAYING: 
-						if(CMD("req")) {
-							int slot;
-							sscanf(data, "req %d", &slot);
-							if(me != NULL && me->id == slot) {
-								sprintf(buffer, "omg nak %d", slot);
-								send_msg(buffer);
-							} else { 
-								sprintf(buffer, "omg hai %d %f %f %f", me->id, me->pos.x, me->pos.y, me->angle);
-								send_msg(buffer);
-							}
-						} else if(CMD("mov")) {
-							int id;
-							sscanf(data, "mov %d", &id);
-							Player * p = get_or_create_plajur(id);
-							if(p != NULL) {
-								sscanf(data, "mov %d %f %f %f %d %f %f %f",&id, &p->pos.x, &p->pos.y, &p->angle, (int*)&p->current_base_texture, &p->velocity.x, &p->velocity.y, &p->da);
-							}
-						} else if(CMD("hai")) {
-							int id;
-							sscanf(data, "hai %d", &id);
-							Player * p = get_or_create_plajur(id);
-							if(p != NULL) {
-								sscanf(data, "hai %d %f %f %f",&id, &p->pos.x, &p->pos.y, &p->angle);
-							}
-						} else if(CMD("rot")) {
-							int id;
-							sscanf(data, "rot %d", &id);
-							Player * p = get_or_create_plajur(id);
-							if(p != NULL) {
-								sscanf(data, "rot %d %f %f",&id, &p->angle, &p->da);
-							}
-						} else if(CMD("fir")) {
-							int id;
-							sscanf(data, "fir %d", &id);
-							Player * p = get_or_create_plajur(id);
-							if(id != me->id && id < NUM_PLAYERS) {
-								p->fire = true;
-							}
-						} else if(CMD("nof")) {
-							int id;
-							sscanf(data, "nof %d", &id);
-							Player * p = players[id];
-							if(id != me->id && p!=NULL) {
-								p->fire = false;
-							}
-						} else if(CMD("kil")) {
-							int id;
-							sscanf(data, "kil %d", &id);
-							Player * p = players[id];
-							if(p!=NULL) {
-								p->dead = 1;
-							}
-						}
-						break;
-				}
+
+				case SDL_KEYDOWN:
+					switch(event.key.keysym.sym) {
+						case SDLK_ESCAPE:
+							*run = false;
+							break;
+						default:
+							keys[event.key.keysym.sym] = true;
+					}
+					break;
+				
+				case SDL_KEYUP:
+					keys[event.key.keysym.sym] = false;
+					break;
+					
+
+				case SDL_QUIT:
+					*run = false;
+					break;
+			}
 		} else {
-			buffer[size] = 0;
-			fprintf(stderr,"Recieved invalid data: %s\n", buffer);
+			switch (event.type){
+				case SDL_KEYDOWN:
+					if(event.key.keysym.sym == SDLK_ESCAPE) {
+						*run = false;
+						return;
+					}
+					break;
+				
+				case SDL_QUIT:
+					*run = false;
+					break;
+			}
 		}
 	}
+}
 
-	//Check if the slot request has time out (aka succeded)
-	if(request_sent_time+0.5 < curtime() && state == STATE_REQUESTED) {
-		ready = true;
-		me = create_player(myname, requested_slot);
-		state = STATE_PLAYING;
+
+static void show_usage(){
+  fprintf(stderr, "./omgponnies [options] nick\n");
+  fprintf(stderr, "  -p, --port=PORT Use PORT for communication (default: %d).\n", PORT);
+  fprintf(stderr, "  -h, --help      This help text.\n");
+}
+
+int main(int argc, char* argv[]){
+	int verbose_flag;
+  static struct option long_options[] =
+  {
+		{"port",    required_argument, 0, 'p' },
+		{"help",    no_argument,       0, 'h'},
+		{"fullscreen",    no_argument,       0, 'f'},
+		{"verbose",    no_argument,      &verbose_flag, 'v'},
+		{0, 0, 0, 0}
+  };
+
+  int option_index = 0;
+  int c;
+
+  while( (c=getopt_long(argc, argv, "p:hfv", long_options, &option_index)) != -1 ) {
+	switch(c) {
+		case 0:
+			break;
+		case 'p':
+			port = atoi(optarg);
+			printf("Set port to %i\n", port);
+			break;
+		case 'f':
+			fullscreen= true;
+			break;
+		case 'h':
+			show_usage();
+			exit(0);
+		default:
+			break;
 	}
-}
+  }
 
-void request_slot(int i) {
-	requested_slot = i;
-	request_sent_time = curtime();
-	char buffer[32];
-	sprintf(buffer, "omg req %i", i);
-	state = STATE_REQUESTED;
-	send_msg(buffer);
-}
+	myname = "PLAJUR";
 
+  /* verbose dst */
+  if ( verbose_flag ){
+	  verbose = stdout;
+  } else {
+	  verbose = fopen("/dev/null","w");
+  }
+
+	srand(time(NULL));
+
+	setup();
+
+  bool run = true;
+
+	while(!ready && run) {
+		render_splash();
+		usleep(1000);
+		poll(&run);
+		network();
+	}
+  
+  struct timeval ref;
+  gettimeofday(&ref, NULL);
+
+  while ( run ){
+    struct timeval ts;
+	gettimeofday(&ts, NULL);
+
+    /* calculate dt */
+    double dt = (ts.tv_sec - ref.tv_sec) * 1000000.0;
+    dt += ts.tv_usec - ref.tv_usec;
+    dt /= 1000000;
+
+    /* do stuff */
+    poll(&run);
+	 network();
+	 logic(dt);
+	 render(dt);
+		 
+    /* framelimiter */
+    const int delay = (REF_DT - dt) * 1000000;
+    if ( delay > 0 ){
+      usleep(delay);
+    }
+
+    /* store reference time */
+    ref = ts;
+  }
+
+  cleanup();
+}

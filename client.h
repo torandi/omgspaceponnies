@@ -1,9 +1,29 @@
 #ifndef CLIENT_H
-	#define CLIENT_H
+#define CLIENT_H
 
-	void network();
-	void init_network();
-	void send_msg(const char * buffer);
-	void request_slot(int i);
+#include <stdint.h>
 
-#endif
+#include "vector.h"
+
+//Forward declaration of Player
+struct Player;
+
+/**
+ * Current animation step.
+ * 0.0 -> 1.0
+ */
+extern float step;
+
+extern FILE* verbose;
+
+extern Player * me;
+
+extern vector_t mouse;
+
+extern bool keys[SDLK_LAST];
+
+extern bool ready;
+
+extern char * myname;
+
+#endif /* CLIENT_H */

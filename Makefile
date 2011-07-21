@@ -12,7 +12,7 @@ omgserver: server.o $(OBJS)
 	$(CXX) server.o $(OBJS) $(LDFLAGS) -o $@
 
 clean:
-	rm -rf *.o omgspaceponies 
+	rm -rf *.o *.d omgspaceponies omgserver
 
 %.o : %.cpp
 	@$(CXX) -MM $(CFLAGS) $< > $*.d

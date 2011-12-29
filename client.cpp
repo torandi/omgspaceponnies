@@ -76,6 +76,11 @@ void Client::incoming_network() {
 					p = players[_vars[0].i];
 					p->fire = (bool)_vars[1].c;
 					break;
+				case NW_CMD_SHIELD:
+					p = players[_vars[0].i];
+					p->shield_angle = _vars[1].f;
+					p->full_shield = _vars[2].c;
+					break;
 				case NW_CMD_JOIN:
 					p = new Player(_vars[1].str, _vars[2].i);
 					p->id = _vars[0].i;
@@ -177,6 +182,13 @@ void Client::send_spawn() {
 	_vars[1].f = me->pos.x;
 	_vars[2].f = me->pos.y;
 	send_cmd( NW_CMD_SPAWN);
+}	
+
+void Client::send_shield() {
+	_vars[0].i = me->id;
+	_vars[1].f = me->shield_angle;
+	_vars[2].c = me->full_shield;
+	send_cmd( NW_CMD_SHIELD);
 }	
 
 void Client::send_quit() {

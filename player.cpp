@@ -306,8 +306,6 @@ bool Player::calc_player_hit(Player * player) {
 }
 
 void Player::calc_fire() {
-	//fire_end.x = ((pos.x/64)+1)*64;
-	//fire_end.y = ((pos.y/64)+1)*64;
 	fire_end = pos;
 	int len = 0;
 	while(len < MAX_FIRE_LENGHT) {

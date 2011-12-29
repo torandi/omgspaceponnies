@@ -88,6 +88,15 @@ void Server::incoming_network() {
 						send_error(sockfd,"SPAWN: Invalid player id");
 					}
 					break;
+				case NW_CMD_SHIELD:
+					if(p->id == _vars[0].i) {
+						p->shield_angle = _vars[1].f;
+						p->full_shield = _vars[2].c;
+						send_frame_to_all(NW_CMD_SHIELD, p->id);
+					} else {
+						send_error(sockfd,"SHIELD: Invalid player id");
+					}
+					break;
 				case NW_CMD_MOVE:
 					if(p->id == _vars[0].i) {
 						//Save data to player:

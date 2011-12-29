@@ -32,6 +32,7 @@ class Client {
 		void send_fire();
 		void send_spawn();
 		void send_quit();
+		void send_shield();
 };
 
 extern Client * client;

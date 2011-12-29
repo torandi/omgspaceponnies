@@ -26,6 +26,7 @@ void logic(double dt) {
 	vector_t last = vector_t(client->me->pos);
 	float last_a = client->me->angle;
 
+
 	int mouse_x,mouse_y;
 	SDL_GetMouseState( &mouse_x, &mouse_y);
 	mouse.x = mouse_x - (window.w/2.0-client->me->pos.x);

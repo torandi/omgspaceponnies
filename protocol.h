@@ -3,9 +3,9 @@
 
 #define PORT 7412
 
-#define FRAME_SIZE 128
+#define FRAME_SIZE 64
 #define HASH_SIZE 4
-#define PAYLOAD_SIZE 124
+#define PAYLOAD_SIZE 60
 
 enum nw_var_type_t {
 	NW_VAR_FLOAT,
@@ -27,6 +27,7 @@ enum nw_cmd_t {
 	NW_CMD_KILL,
 	NW_CMD_SPAWN,
 	NW_CMD_SCORE,
+	NW_CMD_SHIELD,
 	NW_CMD_ERROR
 };
 

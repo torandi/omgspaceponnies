@@ -184,11 +184,19 @@ int main(int argc, char* argv[]){
 	 	dt = 1;
 	}
 
+	bool last_shield_status = client->me->full_shield;
+	float last_shield_angle = client->me->shield_angle;
+
     /* do stuff */
     poll(&run);
 	 client->incoming_network();
 	 logic(dt);
 	 client->run(dt);
+
+	if(client->me->full_shield != last_shield_status || client->me->shield_angle != last_shield_angle) {
+		client->send_shield();
+	}
+
 	 render(dt);
 		 
     /* framelimiter */

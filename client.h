@@ -11,6 +11,7 @@ class Client {
 	int _sockfd;
 	nw_var_t * _vars;
 
+	void send_cmd(nw_cmd_t cmd);
 
 	public:
 		void incoming_network();
@@ -29,6 +30,7 @@ class Client {
 		void send_move(const vector_t &delta, float da);
 		void send_rotate(float da);
 		void send_fire();
+		void send_spawn();
 };
 
 extern Client * client;

@@ -38,61 +38,38 @@ struct Player {
 
 	float da; //Rotation speed
 	vector_t velocity; //Current velocity
-
 	vector_t fire_end;
-
 	bool fire;
-
 	int dead;
-
 	int id;
-
 	int team;
-
 	int score;
-
 	float shield_angle;
-
 	bool full_shield;
-
 	int flash_power;
-
 	std::string nick;
-
 	Texture * shield;
-
 	texture_t current_base_texture;	
-
 	RenderObject textures[TEXTURE_LAST];
-
 	float angle;
 	float power;
 
-
 	Player(const char * nick, int _team);
-
 	void spawn();
-
+	void spawn_remote(vector_t new_pos);
 	void render(double dt);
 	void render_fire(double dt);
-
 	void logic(double dt);
-
 	void calc_fire();
-	
 	bool check_collision(const vector_t &tl, const vector_t &br);
-
 	bool use_power(float amount);
-
 	void add_score(int _score);
-
 	void accelerate(const vector_t &dv);
 	vector_t collision_point(int i, const float * a = NULL) const;
-
 	void init_gfx();
+
 private:
 	void init(int _team);
-
 	void shield_coords(float a, float &x, float &y);
 };
 

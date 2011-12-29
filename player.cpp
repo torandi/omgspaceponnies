@@ -4,6 +4,7 @@
 #include "level.h"
 #include "texture.h"
 #include "server.h"
+#include "client.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -24,7 +25,7 @@ void Player::init(int _team) {
 	power = 1.0;
 	fire = false;
 	team = _team;
-	dead = 0;
+	dead = 1;
 	da = 0;
 	full_shield = false;
 	score = 0;
@@ -82,6 +83,15 @@ void Player::init_gfx(){
 
 void Player::spawn() {
 	pos = get_rand_spawn();
+	dead = 0;
+	power = 1.0;
+	da = 0;
+	angle = M_PI;
+	client->send_spawn();
+}
+
+void Player::spawn_remote(vector_t new_pos) {
+	pos = new_pos;
 	dead = 0;
 	power = 1.0;
 	da = 0;
@@ -214,11 +224,11 @@ void Player::render_fire(double dt) {
 
 void Player::logic(double dt) {
 
-	if(dead > 0) {
+	if(dead > 0 && !IS_SERVER && client->me->id == id) {
 		++dead;
 		if(dead > RESPAWN_TIME)
 			spawn();
-	} else {
+	} else if(dead == 0) {
 		pos += velocity * dt;
 		angle += dt*da;
 
@@ -273,14 +283,14 @@ void Player::calc_fire() {
 					}
 				}
 			}
+		}
 
-			int mx, my;
-			calc_map_index(fire_end, mx, my);
-			if(map_value(mx, my) > 0) {
-				fire_end = prev;
-				//map[my][mx]+=10;
-				break;
-			}
+		int mx, my;
+		calc_map_index(fire_end, mx, my);
+		if(map_value(mx, my) > 0) {
+			fire_end = prev;
+			//map[my][mx]+=10;
+			break;
 		}
 	}
 

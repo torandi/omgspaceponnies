@@ -25,6 +25,7 @@ enum nw_cmd_t {
 	NW_CMD_ROTATE,
 	NW_CMD_FIRE,
 	NW_CMD_KILL,
+	NW_CMD_SPAWN,
 	NW_CMD_SCORE,
 	NW_CMD_ERROR
 };

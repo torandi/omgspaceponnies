@@ -39,6 +39,10 @@ void Client::run(double dt) {
 
 }
 
+void Client::send_cmd(nw_cmd_t cmd) {
+	send_frame(_sockfd, no_addr, cmd, _vars);
+}
+
 void Client::incoming_network() {
 	if(data_available(_sockfd)) {
 		addr_t addr;
@@ -76,7 +80,15 @@ void Client::incoming_network() {
 					p = new Player(_vars[1].str, _vars[2].i);
 					p->id = _vars[0].i;
 					players[p->id] = p;
+					p->dead = _vars[3].c;
+					p->pos.x = _vars[4].f;
+					p->pos.y = _vars[5].f;
+					p->angle = _vars[6].f;
 					printf("Added player %i:%s\n", p->id, p->nick.c_str());
+					break;
+				case NW_CMD_SPAWN:
+					p = players[_vars[0].i];
+					p->spawn_remote(vector_t(_vars[1].f, _vars[2].f));
 					break;
 				case NW_CMD_KILL:
 					{
@@ -133,7 +145,7 @@ void Client::create_me(const char * nick, int team) {
 	me = new Player(nick, team);
 	_vars[0].set_str(nick);
 	_vars[1].i = team;
-	send_frame(_sockfd, no_addr, NW_CMD_HELLO, _vars);
+	send_cmd( NW_CMD_HELLO);
 }
 
 void Client::send_move(const vector_t &delta, float da) {
@@ -145,13 +157,13 @@ void Client::send_move(const vector_t &delta, float da) {
 	_vars[5].f = delta.x;
 	_vars[6].f = delta.y;
 	_vars[7].f = da;
-	send_frame(_sockfd, no_addr, NW_CMD_MOVE, _vars);
+	send_cmd( NW_CMD_MOVE);
 }
 
 void Client::send_fire() {
 	_vars[0].i = me->id;
 	_vars[1].c = me->fire;
-	send_frame(_sockfd, no_addr, NW_CMD_FIRE, _vars);
+	send_cmd( NW_CMD_FIRE);
 }
 
 
@@ -159,5 +171,12 @@ void Client::send_rotate(float da) {
 	_vars[0].i = me->id;
 	_vars[1].f = me->angle;
 	_vars[2].f = da;
-	send_frame(_sockfd, no_addr, NW_CMD_ROTATE,_vars);
+	send_cmd( NW_CMD_ROTATE);
+}	
+
+void Client::send_spawn() {
+	_vars[0].i = me->id;
+	_vars[1].f = me->pos.x;
+	_vars[2].f = me->pos.y;
+	send_cmd( NW_CMD_SPAWN);
 }	

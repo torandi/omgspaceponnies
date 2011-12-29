@@ -74,23 +74,12 @@ void Server::incoming_network() {
 						send_error(sockfd,"QUIT: Invalid player id");
 					}
 					break;
-				case NW_CMD_HELLO:
-					p = new Player(_vars[0].str, _vars[1].i);
-					p->id = _next_player_id++;
-					players[p] = sockfd;
-					_vars[0].i = p->id;
-					send_frame(sockfd, no_addr, NW_CMD_ACCEPT, _vars);
-					_vars[1].set_str(p->nick.c_str());
-					_vars[2].i = p->team;
-					send_frame_to_all(NW_CMD_JOIN);
-					//Send all players to the new player:
-					for(it=players.begin(); it!=players.end(); ++it) {
-						if(it->second != sockfd) {
-							_vars[0].i = it->first->id;
-							_vars[1].set_str(it->first->nick.c_str());
-							_vars[2].i = it->first->team;
-							send_frame(sockfd, no_addr, NW_CMD_JOIN, _vars);
-						}
+				case NW_CMD_SPAWN:
+					if(p->id == _vars[0].i) {
+						p->spawn_remote(vector_t(_vars[1].f, _vars[2].f));
+						send_frame_to_all(NW_CMD_SPAWN, p->id);
+					} else {
+						send_error(sockfd,"SPAWN: Invalid player id");
 					}
 					break;
 				case NW_CMD_MOVE:
@@ -154,6 +143,10 @@ void Server::incoming_network() {
 						send_frame(sockfd, no_addr, NW_CMD_ACCEPT, _vars);
 						_vars[1].set_str(p->nick.c_str());
 						_vars[2].i = p->team;
+						_vars[3].c = 1; //dead
+						_vars[4].f = 0;
+						_vars[5].f = 0;
+						_vars[6].f = 0;
 						send_frame_to_all(NW_CMD_JOIN,p->id);
 						//Send all players to the new player:
 						for(it=players.begin(); it!=players.end(); ++it) {
@@ -161,6 +154,10 @@ void Server::incoming_network() {
 								_vars[0].i = it->first->id;
 								_vars[1].set_str(it->first->nick.c_str());
 								_vars[2].i = it->first->team;
+								_vars[3].c = it->first->dead;
+								_vars[4].f = it->first->pos.x;
+								_vars[5].f = it->first->pos.y;
+								_vars[6].f = it->first->angle;
 								send_frame(sockfd, no_addr, NW_CMD_JOIN, _vars);
 							}
 						}

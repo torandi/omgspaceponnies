@@ -54,6 +54,7 @@ void Client::incoming_network() {
 					fprintf(stderr, "Recived invalid package\n");
 					break;
 				case NW_CMD_QUIT:
+					printf("Start erase\n");
 					printf("Delete user %i:%s\n", _vars[0].i, players[_vars[0].i]->nick.c_str());
 					players.erase(_vars[0].i);
 					break;
@@ -63,14 +64,13 @@ void Client::incoming_network() {
 					p->pos.x = _vars[1].f;
 					p->pos.y = _vars[2].f;
 					p->angle = _vars[3].f;
+					p->current_base_texture = (texture_t)_vars[4].i;
 					p->velocity.x = _vars[5].f;
 					p->velocity.y = _vars[6].f;
-					p->da = _vars[7].f;
 					break;
 				case NW_CMD_ROTATE:
 					p = players[_vars[0].i];
 					p->angle = _vars[1].f;
-					p->da = _vars[2].f;
 					break;
 				case NW_CMD_FIRE:
 					p = players[_vars[0].i];
@@ -148,7 +148,7 @@ void Client::create_me(const char * nick, int team) {
 	send_cmd( NW_CMD_HELLO);
 }
 
-void Client::send_move(const vector_t &delta, float da) {
+void Client::send_move(const vector_t &delta) {
 	_vars[0].i = me->id;
 	_vars[1].f = me->pos.x;
 	_vars[2].f = me->pos.y;
@@ -156,7 +156,6 @@ void Client::send_move(const vector_t &delta, float da) {
 	_vars[4].i = me->current_base_texture;
 	_vars[5].f = delta.x;
 	_vars[6].f = delta.y;
-	_vars[7].f = da;
 	send_cmd( NW_CMD_MOVE);
 }
 
@@ -167,10 +166,9 @@ void Client::send_fire() {
 }
 
 
-void Client::send_rotate(float da) {
+void Client::send_rotate() {
 	_vars[0].i = me->id;
 	_vars[1].f = me->angle;
-	_vars[2].f = da;
 	send_cmd( NW_CMD_ROTATE);
 }	
 
@@ -180,3 +178,8 @@ void Client::send_spawn() {
 	_vars[2].f = me->pos.y;
 	send_cmd( NW_CMD_SPAWN);
 }	
+
+void Client::send_quit() {
+	_vars[0].i = me->id;
+	send_cmd(NW_CMD_QUIT);
+}

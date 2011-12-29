@@ -179,6 +179,11 @@ int main(int argc, char* argv[]){
     dt += ts.tv_usec - ref.tv_usec;
     dt /= 1000000;
 
+	if(dt > 1) {
+	 	printf("dt too large, setting to 1: %f\n", dt);
+	 	dt = 1;
+	}
+
     /* do stuff */
     poll(&run);
 	 client->incoming_network();
@@ -195,6 +200,9 @@ int main(int argc, char* argv[]){
     /* store reference time */
     ref = ts;
   }
+
+  if(ready) 
+	  client->send_quit();
 
   cleanup();
 }

@@ -27,10 +27,11 @@ class Client {
 
 		Player * me;
 
-		void send_move(const vector_t &delta, float da);
-		void send_rotate(float da);
+		void send_move(const vector_t &delta);
+		void send_rotate();
 		void send_fire();
 		void send_spawn();
+		void send_quit();
 };
 
 extern Client * client;

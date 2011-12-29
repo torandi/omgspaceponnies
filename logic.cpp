@@ -9,8 +9,7 @@
 #include "level.h"
 #include "client.h"
 
-#define SEND_DELAY 0.1f
-#define REPULSE_LIMIT 0.3f
+#define SEND_DELAY 0.05f
 
 bool keys[SDLK_LAST];
 vector_t mouse;
@@ -18,10 +17,8 @@ vector_t mouse;
 static double last_send=0;
 
 static bool has_sent_still = false;
-static bool has_sent_no_rot = false;
 static bool has_sent_no_fire = true;
 
-static void hndl_collision(int mx, int my, int cp_index, const vector_t &cp, float last_angle, double dt);
 
 void logic(double dt) {
 	double s = SPEED * dt;
@@ -74,19 +71,7 @@ void logic(double dt) {
 			client->me->current_base_texture = TEXTURE_FWD;
 		}
 
-		client->me->logic(dt);
-
-		//Collision detect on the collision points:
-		for(int i = 0; i < NUM_COLLISION_POINTS; ++i) {
-			int mx, my;
-			vector_t cp = client->me->collision_point(i);
-			calc_map_index(cp, mx, my);
-			if(map_value(mx, my)>0) {
-				hndl_collision(mx,my,i, cp, last_a , dt);
-			}
-		}
-
-
+		client->me->logic(dt, last_a);
 
 		if(client->me->fire) {
 			client->me->full_shield = false;
@@ -113,17 +98,13 @@ void logic(double dt) {
 
 
 			if(delta.norm() > 1 || client->me->fire) {
-				client->send_move(delta, da);
+				client->send_move(delta);
 				has_sent_still = false;
 			} else if(!has_sent_still){
-				client->send_move(vector_t(0,0), da);
+				client->send_move(vector_t(0,0));
 				has_sent_still = true;
 			} else if(da > 0.1) {
-				has_sent_no_rot = false;
-				client->send_rotate(da);
-			} else if(!has_sent_no_rot) {
-				has_sent_no_rot = true;
-				client->send_rotate(0);
+				client->send_rotate();
 			}
 
 			if(client->me->fire) {
@@ -141,31 +122,6 @@ void logic(double dt) {
 		if(client->me->dead > RESPAWN_TIME)
 			client->me->spawn();
 	}
-}
-
-static void hndl_collision(int mx, int my, int cp_index, const vector_t &cp, float last_angle, double dt) {
-	vector_t block = vector_t(mx*64,my*64);
-
-	vector_t repulse = (block - cp).normalized().abs();
-
-
-	if(repulse.x-repulse.y > REPULSE_LIMIT) {
-		client->me->velocity.x *= -1.0f;
-	} else if(repulse.y - repulse.x > REPULSE_LIMIT) {
-		client->me->velocity.y *= -1.0f;
-	} else {
-		client->me->velocity *= -1.0f;
-	}
-
-	vector_t old_cp = client->me->collision_point(cp_index, &last_angle);
-
-	vector_t rotation_impuls = old_cp - cp;
-
-	client->me->velocity+= (rotation_impuls/dt)*0.4;
-	
-	client->me->pos += client->me->velocity*dt + rotation_impuls;
-	client->me->velocity *= ELASTICITY;
-	map[my][mx] = 2;
 }
 
 double curtime()  {

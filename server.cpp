@@ -43,6 +43,13 @@ void Server::run(double dt) {
 
 }
 
+void Server::remove_player(Player * p) {
+	close_socket(players[p]);
+	_vars[0].i = p->id;
+	players.erase(p);
+	send_frame_to_all(NW_CMD_QUIT);
+}
+
 void Server::init_network() {
 	_sockfd = create_tcp_server(_network_port);
 }
@@ -63,13 +70,12 @@ void Server::incoming_network() {
 			frame_t f = read_frame(sockfd,_vars, &addr);
 			switch(f.cmd) {
 				case NW_CMD_INVALID:
-					send_error(sockfd, "Invalid message");
+					printf("Recieved invalid message, closing connection\n");
+					remove_player(p);
 					break;
 				case NW_CMD_QUIT:
 					if(p->id == _vars[0].i) {
-						players.erase(p);
-						//Forward to all other:
-						send_frame_to_all(NW_CMD_QUIT);
+						remove_player(p);
 					} else {
 						send_error(sockfd,"QUIT: Invalid player id");
 					}
@@ -90,7 +96,6 @@ void Server::incoming_network() {
 						p->angle = _vars[3].f;
 						p->velocity.x = _vars[5].f;
 						p->velocity.y = _vars[6].f;
-						p->da = _vars[7].f;
 						//Forward to all other:
 						send_frame_to_all(NW_CMD_MOVE, p->id);
 					} else {
@@ -101,7 +106,6 @@ void Server::incoming_network() {
 					if(p->id == _vars[0].i) {
 						//Save data to player:
 						p->angle = _vars[1].f;
-						p->da = _vars[2].f;
 						//Forward to all other:
 						send_frame_to_all(NW_CMD_ROTATE, p->id);
 					} else {
@@ -183,7 +187,9 @@ void Server::send_frame_to_all(nw_cmd_t cmd, int ignore_player_id) {
 	std::map<Player*, int>::iterator it;
 	for(it=players.begin(); it!=players.end(); ++it) {
 		if(ignore_player_id != it->first->id)
-			send_frame(it->second,no_addr, cmd, _vars);
+			if(!send_frame(it->second,no_addr, cmd, _vars)) {
+				remove_player(it->first);
+			}
 	}
 }
 

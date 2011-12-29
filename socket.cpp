@@ -28,7 +28,7 @@ ssize_t read_raw(int sock,void * buffer,size_t len, int flags, addr_t * src_addr
 	return size;
 }
 
-void send_raw(int sockfd, void * data, const addr_t &to_addr) {
+bool send_raw(int sockfd, void * data, const addr_t &to_addr) {
 #if DEBUG
 	printf("send_raw:: { ");
 	for(int i=0;i<FRAME_SIZE; ++i) {
@@ -43,6 +43,9 @@ void send_raw(int sockfd, void * data, const addr_t &to_addr) {
 
 	if(sendto(sockfd, data, FRAME_SIZE, 0, (sockaddr*) &to_addr.addr, sizeof(sockaddr_in))<0) {
 		perror("send_raw()");
+		return false;
+	} else {
+		return true;
 	}
 }
 

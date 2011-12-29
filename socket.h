@@ -27,7 +27,7 @@ struct addr_t {
  * Reads raw data from the socket
  */
 ssize_t read_raw(int sock,void * buffer,size_t len, int flags, addr_t * src_addr);
-void send_raw(int sockfd, void * data, const addr_t &to_addr);
+bool send_raw(int sockfd, void * data, const addr_t &to_addr);
 
 int create_udp_socket(int port, bool broadcast);
 int create_tcp_server(int port);

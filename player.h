@@ -36,7 +36,6 @@ enum texture_t {
 struct Player {
 	vector_t pos;
 
-	float da; //Rotation speed
 	vector_t velocity; //Current velocity
 	vector_t fire_end;
 	bool fire;
@@ -59,7 +58,7 @@ struct Player {
 	void spawn_remote(vector_t new_pos);
 	void render(double dt);
 	void render_fire(double dt);
-	void logic(double dt);
+	void logic(double dt, float last_angle=0);
 	bool calc_player_hit(Player * player);
 	void calc_fire();
 	bool check_collision(const vector_t &tl, const vector_t &br);
@@ -72,6 +71,8 @@ struct Player {
 private:
 	void init(int _team);
 	void shield_coords(float a, float &x, float &y);
+
+	void hndl_collision(int mx, int my, int cp_index, const vector_t &cp, float last_angle, double dt);
 };
 
 #endif

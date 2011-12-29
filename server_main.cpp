@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <getopt.h>
 #include <time.h>
+#include <signal.h>
 #include <sys/time.h>
 
 #include "common.h"
@@ -63,6 +64,8 @@ int main(int argc, char* argv[]){
 
   printf("OMGSPACEPONNIES! - SERVER\n");
 
+	signal(SIGPIPE, SIG_IGN); //Ignore sigpipe
+
    server = new Server(network_port);
 
 	srand(time(NULL));
@@ -83,6 +86,10 @@ int main(int argc, char* argv[]){
     dt += ts.tv_usec - ref.tv_usec;
     dt /= 1000000;
 
+	if(dt > 1) {
+	 	printf("dt too large, setting to 1: %f\n", dt);
+	 	dt = 1;
+	}
 
     /* do stuff */
 	 server->run(dt);

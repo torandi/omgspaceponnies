@@ -14,9 +14,9 @@ frame_t protocol[] = {
 	{NW_CMD_ACCEPT, 1, {  NW_VAR_UINT16 } }, //JOIN ok: id
 	{NW_CMD_JOIN, 7, { NW_VAR_UINT16, NW_VAR_STR, NW_VAR_UINT16, NW_VAR_CHAR, NW_VAR_FLOAT, NW_VAR_FLOAT, NW_VAR_FLOAT } }, //JOIN: id, nick, team, dead, x, y, angle
 	{NW_CMD_QUIT, 1, { NW_VAR_UINT16 } }, //QUIT: id
-	// MOVE: player_id, x, y, angle, texture_id, velocity x, velocity y, angle velocity
-	{NW_CMD_MOVE, 8, { NW_VAR_UINT16, NW_VAR_FLOAT, NW_VAR_FLOAT,NW_VAR_FLOAT,  NW_VAR_UINT16, NW_VAR_FLOAT, NW_VAR_FLOAT, NW_VAR_FLOAT} }, 
-	{NW_CMD_ROTATE, 3, { NW_VAR_UINT16, NW_VAR_FLOAT, NW_VAR_FLOAT} }, 
+	// MOVE: player_id, x, y, angle, texture_id, velocity x, velocity y
+	{NW_CMD_MOVE, 7, { NW_VAR_UINT16, NW_VAR_FLOAT, NW_VAR_FLOAT,NW_VAR_FLOAT,  NW_VAR_UINT16, NW_VAR_FLOAT, NW_VAR_FLOAT } }, 
+	{NW_CMD_ROTATE, 2, { NW_VAR_UINT16, NW_VAR_FLOAT } }, 
 	{NW_CMD_FIRE, 2, { NW_VAR_UINT16, NW_VAR_CHAR } }, //player id, 0/1 (1=start, 0=stop)
 	{NW_CMD_KILL, 2, { NW_VAR_UINT16, NW_VAR_UINT16 } }, //Killer, killed
 	{NW_CMD_SPAWN, 3, { NW_VAR_UINT16, NW_VAR_FLOAT, NW_VAR_FLOAT} }, 

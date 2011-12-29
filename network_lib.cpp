@@ -41,8 +41,9 @@ addr_t no_addr;
 
 /**
  * Sends a frame on the network. 
+ * Returns false if the socket has closed or the write failed for some other reason
  */
-void send_frame(int sock, const addr_t &target, nw_cmd_t cmd, nw_var_t * vars) {
+bool send_frame(int sock, const addr_t &target, nw_cmd_t cmd, nw_var_t * vars) {
 	char * nw = (char*)malloc(FRAME_SIZE+1);
 	int pos = HASH_SIZE;	
 	uint16_t nwi;
@@ -85,8 +86,9 @@ void send_frame(int sock, const addr_t &target, nw_cmd_t cmd, nw_var_t * vars) {
 	char hash[41];
 	get_hash(hash,nw+HASH_SIZE,PAYLOAD_SIZE);
 	memcpy(nw,hash,HASH_SIZE);
-	send_raw(sock, nw, target);
+	bool ret = send_raw(sock, nw, target);
 	free(nw);
+	return ret;
 }
 
 /**

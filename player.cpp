@@ -13,6 +13,7 @@
 #include <math.h>
 #include <sys/time.h>
 
+#define REPULSE_LIMIT 0.3f
 
 Player::Player(const char * n, int _team) {
 	nick = std::string(n);
@@ -26,7 +27,6 @@ void Player::init(int _team) {
 	fire = false;
 	team = _team;
 	dead = 1;
-	da = 0;
 	full_shield = false;
 	score = 0;
 	flash_power = 0;
@@ -85,7 +85,6 @@ void Player::spawn() {
 	pos = get_rand_spawn();
 	dead = 0;
 	power = 1.0;
-	da = 0;
 	angle = M_PI;
 	client->send_spawn();
 }
@@ -94,7 +93,6 @@ void Player::spawn_remote(vector_t new_pos) {
 	pos = new_pos;
 	dead = 0;
 	power = 1.0;
-	da = 0;
 	angle = M_PI;
 }
 
@@ -222,15 +220,11 @@ void Player::render_fire(double dt) {
 	glEnable(GL_TEXTURE_2D);
 }
 
-void Player::logic(double dt) {
+void Player::logic(double dt, float last_angle) {
+	if(dead == 0) {
+		vector_t last = vector_t(pos);
 
-	if(dead > 0 && !IS_SERVER && client->me->id == id) {
-		++dead;
-		if(dead > RESPAWN_TIME)
-			spawn();
-	} else if(dead == 0) {
 		pos += velocity * dt;
-		angle += dt*da;
 
 		if(fire) {
 			calc_fire();
@@ -239,7 +233,44 @@ void Player::logic(double dt) {
 		power+=(power*0.3+1)*dt*PWR_REGEN_FACTOR;
 		if(power > 1.0) 
 			power = 1.0;
+
+		if(!IS_SERVER && client->me->id != id)
+			last_angle = angle;
+
+		//Collision detect on the collision points:
+		for(int i = 0; i < NUM_COLLISION_POINTS; ++i) {
+			int mx, my;
+			vector_t cp = collision_point(i);
+			calc_map_index(cp, mx, my);
+			if(map_value(mx, my)>0) {
+				hndl_collision(mx,my,i, cp, last_angle , dt);
+			}
+		}
 	}
+}
+
+void Player::hndl_collision(int mx, int my, int cp_index, const vector_t &cp, float last_angle, double dt) {
+	vector_t block = vector_t(mx*64,my*64);
+
+	vector_t repulse = (block - cp).normalized().abs();
+
+
+	if(repulse.x-repulse.y > REPULSE_LIMIT) {
+		velocity.x *= -1.0f;
+	} else if(repulse.y - repulse.x > REPULSE_LIMIT) {
+		velocity.y *= -1.0f;
+	} else {
+		velocity *= -1.0f;
+	}
+
+	vector_t old_cp = collision_point(cp_index, &last_angle);
+
+	vector_t rotation_impuls = old_cp - cp;
+
+	velocity+= (rotation_impuls/dt)*0.4;
+	
+	pos += velocity*dt + rotation_impuls;
+	velocity *= ELASTICITY;
 }
 
 bool Player::use_power(float amount) {

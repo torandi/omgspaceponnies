@@ -22,61 +22,60 @@ static void hndl_collision(int mx, int my, int cp_index, const vector_t &cp, flo
 void logic(double dt) {
 	double s = SPEED * dt;
 
-	vector_t last = vector_t(me->pos);
-	float last_a = me->angle;
+	vector_t last = vector_t(client->me->pos);
+	float last_a = client->me->angle;
 
 	int mouse_x,mouse_y;
 	SDL_GetMouseState( &mouse_x, &mouse_y);
-	mouse.x = mouse_x - (window.w/2.0-me->pos.x);
-	mouse.y = mouse_y - (window.h/2.0-me->pos.y);
+	mouse.x = mouse_x - (window.w/2.0-client->me->pos.x);
+	mouse.y = mouse_y - (window.h/2.0-client->me->pos.y);
 					
 
-	if(me->dead == 0) {
-		me->current_base_texture = TEXTURE_BASE;
+	if(client->me->dead == 0) {
+		client->me->current_base_texture = TEXTURE_BASE;
 
-		me->angle = atan2(mouse.y - me->pos.y, mouse.x - me->pos.x);
+		client->me->angle = atan2(mouse.y - client->me->pos.y, mouse.x - client->me->pos.x);
 
 		if(keys[SDLK_SPACE]) {
-			if(me->use_power(DASH_POWER*dt)) {
-				me->accelerate(vector_t(
-					cos(me->angle),
-					sin(me->angle)
+			if(client->me->use_power(DASH_POWER*dt)) {
+				client->me->accelerate(vector_t(
+					cos(client->me->angle),
+					sin(client->me->angle)
 					) * s * DASH_SPEED_FACTOR);
-				me->current_base_texture = TEXTURE_DASH;
+				client->me->current_base_texture = TEXTURE_DASH;
 			}
 		}
 
 		if(keys[SDLK_d] || keys[SDLK_e]) {
-			me->accelerate(vector_t(
-				cos(me->angle+M_PI/2.0),
-				sin(me->angle+M_PI/2.0)
+			client->me->accelerate(vector_t(
+				cos(client->me->angle+M_PI/2.0),
+				sin(client->me->angle+M_PI/2.0)
 				) * s);
-			me->current_base_texture = TEXTURE_LEFT;
+			client->me->current_base_texture = TEXTURE_LEFT;
 		}
 
 		if(keys[SDLK_a]) {
-			me->accelerate(vector_t(
-				cos(me->angle+M_PI*1.5),
-				sin(me->angle+M_PI*1.5)
+			client->me->accelerate(vector_t(
+				cos(client->me->angle+M_PI*1.5),
+				sin(client->me->angle+M_PI*1.5)
 				) * s);
-			me->current_base_texture = TEXTURE_RIGHT;
+			client->me->current_base_texture = TEXTURE_RIGHT;
 		}
 
 		if(keys[SDLK_w] || keys[SDLK_COMMA]) {
-			me->accelerate(vector_t(
-				cos(me->angle),
-				sin(me->angle)
+			client->me->accelerate(vector_t(
+				cos(client->me->angle),
+				sin(client->me->angle)
 				) * s);
-			me->current_base_texture = TEXTURE_FWD;
+			client->me->current_base_texture = TEXTURE_FWD;
 		}
 
-
-		me->logic(dt);
+		client->me->logic(dt);
 
 		//Collision detect on the collision points:
 		for(int i = 0; i < NUM_COLLISION_POINTS; ++i) {
 			int mx, my;
-			vector_t cp = me->collision_point(i);
+			vector_t cp = client->me->collision_point(i);
 			calc_map_index(cp, mx, my);
 			if(map_value(mx, my)>0) {
 				hndl_collision(mx,my,i, cp, last_a , dt);
@@ -85,53 +84,53 @@ void logic(double dt) {
 
 
 
-		if(me->fire) {
-			me->full_shield = false;
-			if(me->use_power(FIRE_POWER*dt))
-				me->calc_fire(true);
+		if(client->me->fire) {
+			client->me->full_shield = false;
+			if(client->me->use_power(FIRE_POWER*dt))
+				client->me->calc_fire();
 			else
-				me->fire = false;
+				client->me->fire = false;
 		}
 
-		if(me->full_shield) {
-			if(!me->use_power(SHIELD_POWER*dt))
-				me->full_shield = false;
+		if(client->me->full_shield) {
+			if(!client->me->use_power(SHIELD_POWER*dt))
+				client->me->full_shield = false;
 		}
 
 
 		if(last_send+SEND_DELAY < curtime()) {
 			char buffer[1024];
 
-			vector_t delta = me->pos - last;
-			float da = (me->angle - last_a)/dt;
+			vector_t delta = client->me->pos - last;
+			float da = (client->me->angle - last_a)/dt;
 
 			delta.x/=dt;
 			delta.y/=dt;
 
-			if(delta.norm() > 1 || me->fire) {
-					sprintf(buffer, "omg mov %i %f %f %f %i %f %f %f", me->id, me->pos.x, me->pos.y, me->angle, me->current_base_texture, delta.x, delta.y, da);
+			if(delta.norm() > 1 || client->me->fire) {
+					sprintf(buffer, "omg mov %i %f %f %f %i %f %f %f", client->me->id, client->me->pos.x, client->me->pos.y, client->me->angle, client->me->current_base_texture, delta.x, delta.y, da);
 				send_msg(buffer);
 				has_sent_still = false;
 			} else if(!has_sent_still){
-				sprintf(buffer, "omg mov %i %f %f %f %i 0 0 %f", me->id, me->pos.x, me->pos.y, me->angle, me->current_base_texture, da);
+				sprintf(buffer, "omg mov %i %f %f %f %i 0 0 %f", client->me->id, client->me->pos.x, client->me->pos.y, client->me->angle, client->me->current_base_texture, da);
 				send_msg(buffer);
 				has_sent_still = true;
 			} else if(da > 0.1) {
 				has_sent_no_rot = false;
-				sprintf(buffer, "omg rot %i %f %f",me->id, me->angle, da); 
+				sprintf(buffer, "omg rot %i %f %f",client->me->id, client->me->angle, da); 
 				send_msg(buffer);
 			} else if(!has_sent_no_rot) {
 				has_sent_no_rot = true;
-				sprintf(buffer, "omg rot %i %f 0",me->id, me->angle); 
+				sprintf(buffer, "omg rot %i %f 0",client->me->id, client->me->angle); 
 				send_msg(buffer);
 			}
 
-			if(me->fire) {
-				sprintf(buffer, "omg fir %i", me->id);
+			if(client->me->fire) {
+				sprintf(buffer, "omg fir %i", client->me->id);
 				send_msg(buffer);
 				has_sent_no_fire = false;
 			} else if(!has_sent_no_fire) {
-				sprintf(buffer, "omg nof %i", me->id);
+				sprintf(buffer, "omg nof %i", client->me->id);
 				send_msg(buffer);
 				has_sent_no_fire = false;
 			}
@@ -139,13 +138,13 @@ void logic(double dt) {
 			last_send = curtime();
 		}
 	} else {
-		++me->dead;
-		if(me->dead > RESPAWN_TIME)
-			me->spawn();
+		++client->me->dead;
+		if(client->me->dead > RESPAWN_TIME)
+			client->me->spawn();
 	}
 	//Update other:
 	for(int i=0; i < 4; ++i) {
-		if(i != me->id && players[i] != NULL) {
+		if(i != client->me->id && players[i] != NULL) {
 			players[i]->logic(dt);	
 		}
 	}
@@ -158,30 +157,22 @@ static void hndl_collision(int mx, int my, int cp_index, const vector_t &cp, flo
 
 
 	if(repulse.x-repulse.y > REPULSE_LIMIT) {
-		me->velocity.x *= -1.0f;
+		client->me->velocity.x *= -1.0f;
 	} else if(repulse.y - repulse.x > REPULSE_LIMIT) {
-		me->velocity.y *= -1.0f;
+		client->me->velocity.y *= -1.0f;
 	} else {
-		me->velocity *= -1.0f;
+		client->me->velocity *= -1.0f;
 	}
 
-	vector_t old_cp = me->collision_point(cp_index, &last_angle);
+	vector_t old_cp = client->me->collision_point(cp_index, &last_angle);
 
 	vector_t rotation_impuls = old_cp - cp;
 
-	me->velocity+= (rotation_impuls/dt)*0.4;
+	client->me->velocity+= (rotation_impuls/dt)*0.4;
 	
-	me->pos += me->velocity*dt + rotation_impuls;
-	me->velocity *= ELASTICITY;
+	client->me->pos += client->me->velocity*dt + rotation_impuls;
+	client->me->velocity *= ELASTICITY;
 	map[my][mx] = 2;
-}
-
-Player * create_player(char * nick, int id) {
-	printf("Created player %d\n", id);
-	Player * p = new Player(nick, id);
-	p->spawn();
-	players[id] = p;
-	return p;
 }
 
 double curtime()  {

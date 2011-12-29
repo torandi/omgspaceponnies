@@ -44,10 +44,9 @@ void Server::init_network() {
 }
 
 void Server::send_error(int sockfd, const char * msg) {
-	addr_t addr;
 	fprintf(stderr,"Send error msg: %s\n",msg);
 	_vars[0].set_str(msg);
-	send_frame(sockfd, addr, NW_CMD_ERROR, _vars);
+	send_frame(sockfd, no_addr, NW_CMD_ERROR, _vars);
 }
 
 void Server::incoming_network() {
@@ -80,6 +79,15 @@ void Server::incoming_network() {
 					_vars[1].set_str(p->nick.c_str());
 					_vars[2].i = p->team;
 					send_frame_to_all(NW_CMD_JOIN);
+					//Send all players to the new player:
+					for(it=players.begin(); it!=players.end(); ++it) {
+						if(it->second != sockfd) {
+							_vars[0].i = it->first->id;
+							_vars[1].set_str(it->first->nick.c_str());
+							_vars[2].i = it->first->team;
+							send_frame(sockfd, no_addr, NW_CMD_JOIN, _vars);
+						}
+					}
 					break;
 				case NW_CMD_MOVE:
 					if(p->id == _vars[0].i) {
@@ -91,7 +99,7 @@ void Server::incoming_network() {
 						p->velocity.y = _vars[6].f;
 						p->da = _vars[7].f;
 						//Forward to all other:
-						send_frame_to_all(NW_CMD_MOVE);
+						send_frame_to_all(NW_CMD_MOVE, p->id);
 					} else {
 						send_error(sockfd,"MOVE: Invalid player id");
 					}
@@ -101,7 +109,7 @@ void Server::incoming_network() {
 						//mark fire
 						p->fire = (bool)_vars[1].c;
 						//Forward to all other:
-						send_frame_to_all(NW_CMD_FIRE);
+						send_frame_to_all(NW_CMD_FIRE, p->id);
 					} else {
 						send_error(sockfd,"FIRE: Invalid player id");
 					}

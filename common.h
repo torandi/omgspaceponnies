@@ -15,5 +15,7 @@ extern FILE* verbose;
 
 extern bool IS_SERVER;
 
+extern bool ready;
+
 double curtime();
 #endif /* COMMON_H */

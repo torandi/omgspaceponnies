@@ -1,28 +1,34 @@
-#ifndef CLIENT_H
-#define CLIENT_H
+#ifndef CLIENT_H_
+#define CLIENT_H_
 
-#include <stdint.h>
+#include "protocol.h"
+#include "network_lib.h"
+#include "socket.h"
+#include "player.h"
+#include <map>
 
-#include "vector.h"
-
-//Forward declaration of Player
-struct Player;
-
-/**
- * Current animation step.
- * 0.0 -> 1.0
- */
-extern float step;
-
-extern FILE* verbose;
-
-extern Player * me;
-
-extern vector_t mouse;
-
-extern bool keys[SDLK_LAST];
-
-extern bool ready;
+class Client {
+	int _network_port;
+	int _sockfd;
+	nw_var_t * _vars;
 
 
-#endif /* CLIENT_H */
+	public:
+		void incoming_network();
+		void outgoing_network();
+
+		std::vector<int, Player*> players; 
+
+		Client(const char* host, int port);
+		~Client();
+
+      void run(double dt);
+
+		void create_me(const char * nick, int team);
+
+		Player * me;
+};
+
+extern Client * client;
+
+#endif

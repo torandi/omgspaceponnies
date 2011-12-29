@@ -35,6 +35,8 @@ static int nwtf(void * nw, float * f);
 static int strtnw(char * str, void * nw);
 static int nwtstr(void * nw, char * str);
 
+addr_t no_addr;
+
 /**
  * Sends a frame on the network. 
  * vars[0] will be overwritten with the protocol cmd, put nothing or irrelevant data there

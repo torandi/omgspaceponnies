@@ -4,16 +4,7 @@
 #include <stdint.h>
 #include "socket.h"
 
-#define FRAME_SIZE 32
-#define HASH_SIZE 4
-#define PAYLOAD_SIZE 28
 
-enum nw_var_type_t {
-	NW_VAR_FLOAT,
-	NW_VAR_UINT16,
-	NW_VAR_CHAR,
-	NW_VAR_STR
-};
 
 #include "protocol.h"
 
@@ -25,6 +16,8 @@ struct nw_var_t {
 	uint16_t i;
 	char c;
 	char * str;
+
+	void set_str(const char * string);
 
 	nw_var_t();
 

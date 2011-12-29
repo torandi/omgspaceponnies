@@ -297,6 +297,11 @@ nw_var_t::~nw_var_t() {
 		free(str);
 }
 
+void nw_var_t::set_str(const char * string) {
+	str = new char[strlen(string)];
+	strcpy(str, string);
+}
+
 /****************
  * network_data_t
  ***************/

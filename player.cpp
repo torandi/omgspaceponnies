@@ -3,6 +3,7 @@
 #include "render.h"
 #include "level.h"
 #include "texture.h"
+#include "server.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -17,12 +18,7 @@ Player::Player(const char * n, int _team) {
 	init(_team);
 }
 
-Player::Player(int _team) {
-	init(_team);
-}
-
 void Player::init(int _team) {
-	char texture[64];
 
 	angle = M_PI;
 	power = 1.0;
@@ -31,10 +27,18 @@ void Player::init(int _team) {
 	dead = 0;
 	da = 0;
 	full_shield = false;
+	score = 0;
+	flash_power = 0;
 
 	shield_angle = M_PI;
 
 	velocity = vector_t(0.0f,0.0f);
+	if(!IS_SERVER) 
+		init_gfx();
+}
+
+void Player::init_gfx(){
+	char texture[64];
 
 	current_base_texture = TEXTURE_BASE;
 
@@ -209,22 +213,23 @@ void Player::render_fire(double dt) {
 }
 
 void Player::logic(double dt) {
-	pos += velocity * dt;
-	angle += dt*da;
-
-	if(fire) {
-		calc_fire(false);
-	}
 
 	if(dead > 0) {
 		++dead;
 		if(dead > RESPAWN_TIME)
 			spawn();
-	}
+	} else {
+		pos += velocity * dt;
+		angle += dt*da;
 
-	power+=(power*0.3+1)*dt*PWR_REGEN_FACTOR;
-	if(power > 1.0) 
-		power = 1.0;
+		if(fire) {
+			calc_fire();
+		}
+
+		power+=(power*0.3+1)*dt*PWR_REGEN_FACTOR;
+		if(power > 1.0) 
+			power = 1.0;
+	}
 }
 
 bool Player::use_power(float amount) {
@@ -232,13 +237,13 @@ bool Player::use_power(float amount) {
 		power -= amount;
 		return true;
 	} else {
-		if(this == me && flash_power <= 0) 
+		if(flash_power <= 0) 
 			flash_power = 1;
 		return false;
 	}
 }
 
-void Player::calc_fire(bool detect_kill) {
+void Player::calc_fire() {
 	//fire_end.x = ((pos.x/64)+1)*64;
 	//fire_end.y = ((pos.y/64)+1)*64;
 	fire_end = pos;
@@ -249,16 +254,23 @@ void Player::calc_fire(bool detect_kill) {
 		fire_end.x+= 32*cos(angle);
 		fire_end.y+= 32*sin(angle);
 
-		for(int i=0; i < NUM_PLAYERS; ++i) {
-			if(i != id && players[i] != NULL && players[i]->dead == 0) {
-				vector_t d;
-				d.x = fire_end.x - players[i]->pos.x;
-				d.y = fire_end.y - players[i]->pos.y;
-				if(d.norm() < PLAYER_W/2.0)  {
-					players[i]->dead = 1;
-					printf("Killed player %i\n", i);
-					char buffer[128];
-					sprintf(buffer, "omg kil %i", i);
+		if(IS_SERVER) { //Detect kill
+			std::map<Player*, int>::iterator it;
+			for(it=server->players.begin(); it!=server->players.end(); ++it) {
+				if(it->first->id != id && it->first->dead == 0) {
+					vector_t d;
+					d.x = fire_end.x - it->first->pos.x;
+					d.y = fire_end.y - it->first->pos.y;
+					if(d.norm() < PLAYER_W/2.0)  {
+						it->first->dead = 1;
+						if(it->first->team != team)
+							add_score(KILL_SCORE);
+						else
+							add_score(TEAM_KILL_SCORE);
+						printf("Killed player %s\n", it->first->nick.c_str());
+						server->network_kill(this, it->first);
+
+					}
 				}
 			}
 
@@ -272,6 +284,12 @@ void Player::calc_fire(bool detect_kill) {
 		}
 	}
 
+}
+
+void Player::add_score(int _score) {
+	score+=_score;
+	if(IS_SERVER)
+		server->network_score(this);
 }
 
 void Player::accelerate(const vector_t &dv) {

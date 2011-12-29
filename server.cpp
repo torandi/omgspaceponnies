@@ -1,97 +1,138 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
 
-#include "common.h"
-#include "logic.h"
-#include "level.h"
+#include "server.h"
+
+#include "protocol.h"
+#include "network_lib.h"
+#include "socket.h"
 #include "player.h"
-#include "server_network.h"
+#include "network.h"
 
+#include <map>
 
-float step = 0.0f;
-int verbose_flag = 0;
-FILE* verbose = NULL;
-
-std::vector<Player> players;
-
-static void show_usage(){
-  fprintf(stderr, "./omgponnies [options] nick\n");
-  fprintf(stderr, "  -p, --port=PORT Use PORT for communication (default: %d).\n", PORT);
-  fprintf(stderr, "  -h, --help      This help text.\n");
+Server::Server(int port) {
+	_vars = new nw_var_t[PAYLOAD_SIZE-1]; //Can't be more that this many vars
+	_network_port = port;
+	players = std::map<Player*, int>();
+	_next_player_id = 0;
+   init_network();
 }
 
-int main(int argc, char* argv[]){
-	int verbose_flag;
-  static struct option long_options[] =
-  {
-		{"port",    required_argument, 0, 'p' },
-		{"help",    no_argument,       0, 'h'},
-		{"verbose",    no_argument,      &verbose_flag, 'v'},
-		{0, 0, 0, 0}
-  };
-
-  int option_index = 0;
-  int c;
-
-  while( (c=getopt_long(argc, argv, "p:hv", long_options, &option_index)) != -1 ) {
-	switch(c) {
-		case 0:
-			break;
-		case 'p':
-			network_port = atoi(optarg);
-			printf("Set port to %i\n", network_port);
-			break;
-		case 'h':
-			show_usage();
-			exit(0);
-		default:
-			break;
+Server::~Server() {
+	delete[](_vars);
+	std::map<Player*, int>::iterator it;
+	for(it=players.begin(); it!=players.end(); ++it) {
+		delete it->first;
+		close_socket(it->second);
 	}
-  }
+}
 
-  /* verbose dst */
-  if ( verbose_flag ){
-	  verbose = stdout;
-  } else {
-	  verbose = fopen("/dev/null","w");
-  }
+void Server::run(double dt) {
+	incoming_network();
 
-	srand(time(NULL));
-
-	init_level();
-
-	bool run = true;
-
-  struct timeval ref;
-  gettimeofday(&ref, NULL);
-
-  std::vector<Player>::iterator it;
-
-  while ( run ){
-    struct timeval ts;
-	gettimeofday(&ts, NULL);
-
-    /* calculate dt */
-    double dt = (ts.tv_sec - ref.tv_sec) * 1000000.0;
-    dt += ts.tv_usec - ref.tv_usec;
-    dt /= 1000000;
-
-    /* do stuff */
-	 network();
-	//Update other:
-	for(it=players.begin(); it!=players.end();++it) {
-		it->logic(dt);	
+	std::map<Player*, int>::iterator it;
+	for(it=players.begin(); it!=players.end(); ++it) {
+		//Run player logic
+		it->first->logic(dt);
 	}
-		 
-    /* framelimiter */
-    const int delay = (REF_DT - dt) * 1000000;
-    if ( delay > 0 ){
-      usleep(delay);
-    }
 
-    /* store reference time */
-    ref = ts;
-  }
+	outgoing_network();
+}
 
-  cleanup();
+void Server::init_network() {
+	_sockfd = create_tcp_server(_network_port);
+}
+
+void Server::send_error(int sockfd, const char * msg) {
+	addr_t addr;
+	fprintf(stderr,"Send error msg: %s\n",msg);
+	_vars[0].set_str(msg);
+	send_frame(sockfd, addr, NW_CMD_ERROR, _vars);
+}
+
+void Server::incoming_network() {
+	std::map<Player*, int>::iterator it;
+	for(it=players.begin(); it!=players.end(); ++it) {
+		int sockfd = it->second;
+		Player * p = it->first;
+		if(data_available(sockfd)) {
+			addr_t addr;
+			frame_t f = read_frame(sockfd,_vars, &addr);
+			switch(f.cmd) {
+				case NW_CMD_INVALID:
+					send_error(sockfd, "Invalid message");
+					break;
+				case NW_CMD_QUIT:
+					if(p->id == _vars[0].i) {
+						players.erase(p);
+						//Forward to all other:
+						send_frame_to_all(NW_CMD_QUIT);
+					} else {
+						send_error(sockfd,"QUIT: Invalid player id");
+					}
+					break;
+				case NW_CMD_HELLO:
+					p = new Player(_vars[0].str, _vars[1].i);
+					p->id = _next_player_id++;
+					players[p] = sockfd;
+					_vars[0].i = p->id;
+					send_frame(sockfd, addr, NW_CMD_ACCEPT, _vars);
+					_vars[1].set_str(p->nick.c_str());
+					_vars[2].i = p->team;
+					send_frame_to_all(NW_CMD_JOIN);
+					break;
+				case NW_CMD_MOVE:
+					if(p->id == _vars[0].i) {
+						//Save data to player:
+						p->pos.x = _vars[1].f;
+						p->pos.y = _vars[2].f;
+						p->angle = _vars[3].f;
+						p->velocity.x = _vars[5].f;
+						p->velocity.y = _vars[6].f;
+						p->da = _vars[7].f;
+						//Forward to all other:
+						send_frame_to_all(NW_CMD_MOVE);
+					} else {
+						send_error(sockfd,"MOVE: Invalid player id");
+					}
+					break;
+				case NW_CMD_FIRE:
+					if(p->id == _vars[0].i) {
+						//mark fire
+						p->fire = (bool)_vars[1].c;
+						//Forward to all other:
+						send_frame_to_all(NW_CMD_FIRE);
+					} else {
+						send_error(sockfd,"FIRE: Invalid player id");
+					}
+					break;
+			}	
+		}
+	}
+}
+
+void Server::outgoing_network() {
+
+}
+
+void Server::send_frame_to_all(nw_cmd_t cmd, int ignore_player_id) {
+	addr_t addr;
+	std::map<Player*, int>::iterator it;
+	for(it=players.begin(); it!=players.end(); ++it) {
+		if(ignore_player_id != it->first->id)
+			send_frame(it->second,addr, cmd, _vars);
+	}
+}
+
+void Server::network_kill(Player * killer, Player * killed) {
+	_vars[0].i = killer->id;
+	_vars[1].i = killed->id;
+	send_frame_to_all(NW_CMD_KILL);
+}
+
+void Server::network_score(Player * player) {
+	addr_t addr;
+	int client_sock = players[player];
+	_vars[0].i = player->score;
+	send_frame(client_sock,addr, NW_CMD_SCORE, _vars);
 }

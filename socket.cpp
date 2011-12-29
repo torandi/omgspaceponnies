@@ -32,7 +32,7 @@ void send_raw(int sockfd, void * data, const addr_t &to_addr) {
 	}
 }
 
-int create_socket(int port, bool broadcast) {
+int create_udp_socket(int port, bool broadcast) {
 
 	int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 	if(sockfd < 0) {
@@ -72,12 +72,78 @@ int create_socket(int port, bool broadcast) {
 	return sockfd;
 }
 
+int create_tcp_client(const char * hostname, int port) {
+	int sockfd;
+	sockaddr_in serv_addr;
+
+	sockfd = socket(AF_INET, SOCK_STREAM, 0);
+	if (sockfd < 0)  {
+		perror("ERROR opening socket");
+		exit(1);
+	}
+
+	serv_addr = create_addr_from_hn(hostname, port).addr;
+
+	int x;
+	x=fcntl(sockfd,F_GETFL,0);
+	fcntl(sockfd,F_SETFL,x | O_NONBLOCK);
+
+	if (connect(sockfd,(sockaddr *) &serv_addr,sizeof(serv_addr)) < 0)  {
+		perror("Connection failed");
+		exit(1);
+	}
+
+	return sockfd;
+}
+
+int create_tcp_server(int port) {
+
+	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+	if(sockfd < 0) {
+		perror("create socket()");
+		exit(1);
+	}
+
+	int one = 1;
+
+	if(setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(int)) == -1) {
+		perror("create_tcp_server(): setsockopt SO_REUSEADDR");
+		exit(1);
+	}
+
+
+	sockaddr_in addr = create_addr(INADDR_ANY,port).addr;
+
+	if (bind(sockfd, (sockaddr *) &addr, sizeof(addr)) < 0)  {
+		perror("network(): bind");
+		exit(1);
+	}
+
+	listen(sockfd,5);
+
+	return sockfd;
+}
+
+int accept_client(int sockfd) {
+	sockaddr_in cli_addr;
+	socklen_t clilen = sizeof(cli_addr);
+	int newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
+	if (newsockfd < 0) 
+		perror("ERROR on accept");
+
+	int x;
+	x=fcntl(newsockfd,F_GETFL,0);
+	fcntl(newsockfd,F_SETFL,x | O_NONBLOCK);
+	return newsockfd;
+}
+
 void close_socket(int sock) {
 	close(sock);
 }
 
 addr_t create_addr(uint32_t address, int port) {
 	addr_t addr;
+	bzero((char *) &addr.addr, sizeof(addr.addr));
 	addr.addr.sin_family = AF_INET;
 	addr.addr.sin_port = htons(port);
 	addr.addr.sin_addr.s_addr = htonl(address);	

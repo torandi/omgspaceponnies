@@ -19,6 +19,9 @@
 #define FIRE_POWER 1.0f
 #define SHIELD_POWER 0.4f
 
+#define KILL_SCORE 200
+#define TEAM_KILL_SCORE -400
+
 enum texture_t {
 	TEXTURE_BASE,
 	TEXTURE_DASH,
@@ -46,9 +49,13 @@ struct Player {
 
 	int team;
 
+	int score;
+
 	float shield_angle;
 
 	bool full_shield;
+
+	int flash_power;
 
 	std::string nick;
 
@@ -71,15 +78,18 @@ struct Player {
 
 	void logic(double dt);
 
-	void calc_fire(bool detect_kill);
+	void calc_fire();
 	
 	bool check_collision(const vector_t &tl, const vector_t &br);
 
 	bool use_power(float amount);
 
+	void add_score(int _score);
+
 	void accelerate(const vector_t &dv);
 	vector_t collision_point(int i, const float * a = NULL) const;
 
+	void init_gfx();
 private:
 	void init(int _team);
 

@@ -11,12 +11,9 @@
 
 #define SPEED 300.0f
 
-//Forward declaration of Player
-struct Player;
-
-extern std::vector<Player> players;
-
 extern FILE* verbose;
+
+extern bool IS_SERVER;
 
 double curtime();
 #endif /* COMMON_H */

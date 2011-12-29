@@ -60,6 +60,7 @@ struct Player {
 	void render(double dt);
 	void render_fire(double dt);
 	void logic(double dt);
+	bool calc_player_hit(Player * player);
 	void calc_fire();
 	bool check_collision(const vector_t &tl, const vector_t &br);
 	bool use_power(float amount);

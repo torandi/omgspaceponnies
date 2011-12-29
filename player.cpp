@@ -253,6 +253,27 @@ bool Player::use_power(float amount) {
 	}
 }
 
+bool Player::calc_player_hit(Player * player) {
+	if(player->id != id && player->dead == 0) {
+		vector_t d;
+		d.x = fire_end.x - player->pos.x;
+		d.y = fire_end.y - player->pos.y;
+		if(d.norm() < PLAYER_W/2.0)  {
+			if(IS_SERVER) {
+				player->dead = 1;
+				if(player->team != team)
+					add_score(KILL_SCORE);
+				else
+					add_score(TEAM_KILL_SCORE);
+				printf("Killed player %s\n", player->nick.c_str());
+				server->network_kill(this, player);
+			}
+			return true;
+		}
+	}
+	return false;
+}
+
 void Player::calc_fire() {
 	//fire_end.x = ((pos.x/64)+1)*64;
 	//fire_end.y = ((pos.y/64)+1)*64;
@@ -264,26 +285,19 @@ void Player::calc_fire() {
 		fire_end.x+= 32*cos(angle);
 		fire_end.y+= 32*sin(angle);
 
-		if(IS_SERVER) { //Detect kill
-			std::map<Player*, int>::iterator it;
-			for(it=server->players.begin(); it!=server->players.end(); ++it) {
-				if(it->first->id != id && it->first->dead == 0) {
-					vector_t d;
-					d.x = fire_end.x - it->first->pos.x;
-					d.y = fire_end.y - it->first->pos.y;
-					if(d.norm() < PLAYER_W/2.0)  {
-						it->first->dead = 1;
-						if(it->first->team != team)
-							add_score(KILL_SCORE);
-						else
-							add_score(TEAM_KILL_SCORE);
-						printf("Killed player %s\n", it->first->nick.c_str());
-						server->network_kill(this, it->first);
-
-					}
-				}
+		
+		bool hit=false;
+		if(IS_SERVER) {
+			for(std::map<Player*, int>::iterator it=server->players.begin(); it!=server->players.end(); ++it) {
+				hit = calc_player_hit(it->first);
+			}
+		} else {
+			for(std::map<int, Player*>::iterator it=client->players.begin(); it!=client->players.end(); ++it) {
+				hit |= calc_player_hit(it->second);
 			}
 		}
+		if(hit)
+			break;
 
 		int mx, my;
 		calc_map_index(fire_end, mx, my);

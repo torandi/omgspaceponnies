@@ -3,9 +3,6 @@
 
 #include <stdint.h>
 #include "socket.h"
-
-
-
 #include "protocol.h"
 
 /**

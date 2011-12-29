@@ -22,7 +22,7 @@ bool ready = false;
 bool IS_SERVER=false;
 
 static void setup(){
-//	render_init(1024, 768, fullscreen);
+	render_init(1024, 768, fullscreen);
 	init_level();
 }
 
@@ -156,12 +156,12 @@ int main(int argc, char* argv[]){
 
   bool run = true;
 
-  //render_splash();
+  render_splash();
   client = new Client(hostname, network_port);
   client->create_me(nick, team);
 
 	while(!ready && run) {
-	//	render_splash();
+		render_splash();
 		usleep(1000);
 		poll(&run);
 		client->incoming_network();

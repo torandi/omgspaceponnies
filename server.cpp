@@ -146,13 +146,15 @@ void Server::incoming_network() {
 					{
 						Player * p = new Player(_vars[0].str, _vars[1].i);
 						p->id = _next_player_id++;
+						printf("Player %s joined. Assigned id: %i\n", p->nick.c_str(), p->id);
 						players[p] = sockfd;
 						_vars[0].i = p->id;
-						_new_connections.erase(new_it);
+						new_it = _new_connections.erase(new_it);
+						--new_it;
 						send_frame(sockfd, no_addr, NW_CMD_ACCEPT, _vars);
 						_vars[1].set_str(p->nick.c_str());
 						_vars[2].i = p->team;
-						send_frame_to_all(NW_CMD_JOIN);
+						send_frame_to_all(NW_CMD_JOIN,p->id);
 						//Send all players to the new player:
 						for(it=players.begin(); it!=players.end(); ++it) {
 							if(it->second != sockfd) {

@@ -20,7 +20,7 @@
 #include "socket.h"
 #include "protocol.h"
 
-#define DEBUG 1
+#define DEBUG 0
 
 /*****
  * Contains network function shared by client and server
@@ -35,13 +35,12 @@ static bool get_frame(int sock, network_data_t * nd);
 static int ftnw(float f, void * nw);
 static int nwtf(void * nw, float * f);
 static int strtnw(char * str, void * nw);
-static int nwtstr(void * nw, char * str);
+static int nwtstr(char * nw, char ** str);
 
 addr_t no_addr;
 
 /**
  * Sends a frame on the network. 
- * vars[0] will be overwritten with the protocol cmd, put nothing or irrelevant data there
  */
 void send_frame(int sock, const addr_t &target, nw_cmd_t cmd, nw_var_t * vars) {
 	char * nw = (char*)malloc(FRAME_SIZE+1);
@@ -58,8 +57,6 @@ void send_frame(int sock, const addr_t &target, nw_cmd_t cmd, nw_var_t * vars) {
 	const nw_var_type_t * var_types = protocol[cmd].var_types;
 	nw[pos] = cmd;
 	pos+=sizeof(char);
-
-	printf("Sending cmd #%i\n", cmd);
 
 	for(int i=0; i < num_vars; ++i) {
 		switch(var_types[i]) {
@@ -78,6 +75,10 @@ void send_frame(int sock, const addr_t &target, nw_cmd_t cmd, nw_var_t * vars) {
 			case NW_VAR_STR:
 				pos += strtnw(vars[i].str, nw+pos);
 				break;
+		}
+		if(pos >= FRAME_SIZE) {
+			fprintf(stderr, "Network frames are to small!\n");
+			exit(2);
 		}
 	}
 
@@ -127,8 +128,7 @@ frame_t read_frame(int sock, nw_var_t * vars, addr_t * addr) {
 					pos += sizeof(char);
 					break;
 				case NW_VAR_STR:
-					vars[i].str = (char*)malloc(PAYLOAD_SIZE); //Maximum possible size
-					pos += nwtstr(nw.data, vars[i].str);
+					pos += nwtstr((char*)nw.data+pos, &vars[i].str);
 					break;
 			}
 		}
@@ -188,49 +188,13 @@ static bool cmp_hash(char hash[HASH_SIZE],char * str,int len) {
  * Converts the float to a network format and write it to nw, returns the number of bytes written (probably 3)
  */
 static int ftnw(float f, void * nw) {
-	if(fabs(f) >= UINT16_MAX) {
-		fprintf(stderr,"(ftnw: Number to large. |%f| > %d\n", f,UINT16_MAX);
-		return 0;
-	}
-	bool negative = (f<0);
-	f = fabs(f);
-	uint16_t integer_part;
-	unsigned char decimal_part;
-	integer_part = (uint16_t)floor(f);
-	decimal_part = (unsigned char)floor((f - integer_part)*100.0);
-	if(decimal_part > 99) {
-		fprintf(stderr, "Internal error in ftnw(), decimal part (%d) > 99\n",decimal_part);
-		return 0;
-	}
-	if(negative) {
-		decimal_part+=100; //0-99: positive, 100-199: negative
-	}
-
-	uint16_t nw_order = htons(integer_part);
-	memcpy(nw,&nw_order, sizeof(nw_order));
-	((unsigned char*)nw)[sizeof(nw_order)] = decimal_part;
-
-	return sizeof(nw_order)+sizeof(unsigned char);
+	memcpy(nw,&f, sizeof(f));
+	return sizeof(f);
 }
 
 static int nwtf(void * nw, float * f) {
-	uint16_t integer_part;
-	unsigned char decimal_part;
-	bool negative = false;
-	
-	integer_part = ntohs(*((uint16_t*)nw));
-	decimal_part = *((unsigned char*)nw+sizeof(uint16_t));
-		
-	if(decimal_part > 99) {
-		negative = true;
-		decimal_part -=100;
-	}
-
-	*f = integer_part + (float)decimal_part/100.0;
-	if(negative)
-		*f *= -1.0;
-
-	return sizeof(uint16_t)+sizeof(unsigned char);
+	*f = *((float*)nw);
+	return sizeof(float);
 }
 
 static int strtnw(char * str, void * nw) {
@@ -243,10 +207,11 @@ static int strtnw(char * str, void * nw) {
 /**
  * Reads a string from the network buffer and writes to str.
  */ 
-static int nwtstr(void * nw, char * str) {
-	int len = ((char*)nw)[0];
-	str[len] = 0x00;
-	memcpy(str,(char*)nw+1,len);
+static int nwtstr(char * nw, char ** str) {
+	int len = nw[0];
+	*str = (char*)malloc(len+1);
+	(*str)[len] = 0x00;
+	memcpy(*str,nw+1,len);
 	return len+1;
 }
 
@@ -258,18 +223,13 @@ void test_network() {
 	for(int i = 0; i<1000;++i) {
 		int n = rand() % UINT16_MAX;
 		float f = (float)n/(float)100.0;
-		printf("Converting float %f...",f);
-		if(ftnw(f, nw)==3) {
-			float b;
-			nwtf(nw,&b);
-			if(fabs(f-b) > 0.019) {
-				printf("diff: %f (b: %f)\n", fabs(f-b),b);
-				++errors;
-			} else {
-				printf("OK\n");
-			}
-		} else 
+		ftnw(f, nw);
+		float b;
+		nwtf(nw,&b);
+		if(fabs(f-b) > 0.019) {
+			printf("Error converting float %f: diff: %f (b: %f)\n", f, fabs(f-b),b);
 			++errors;
+		}
 	}
 
 	printf("Testing converting negative floats back and forth:\n");
@@ -278,37 +238,27 @@ void test_network() {
 		int n = rand() % UINT16_MAX;
 		float f = (float)n/(float)100.0;
 		f *=-1;
-		printf("Converting float %f...",f);
-		if(ftnw(f, nw)==3) {
-			float b;
-			nwtf(nw, &b);
-			if(fabs(f-b) > 0.019) {
-				printf("diff: %f (b: %f)\n", fabs(f-b),b);
-				++errors;
-			} else {
-				printf("OK\n");
-			}
-		} else 
+		ftnw(f, nw);
+		float b;
+		nwtf(nw, &b);
+		if(fabs(f-b) > 0.019) {
+			printf("Error converting float %f: diff: %f (b: %f)\n", f, fabs(f-b),b);
 			++errors;
+		}
 	}
 	float test[]={13.37};
 	int count = 1;
 	for(int i=0; i < count; ++i) {
 		float f=test[i];
-		printf("Converting float %f...",f);
-		if(ftnw(f, nw)==3) {
-			float b;
-			nwtf(nw, &b);
-			if(fabs(f-b) > 0.019) {
-				printf("diff: %f (b: %f)\n", fabs(f-b),b);
-				++errors;
-			} else {
-				printf("OK\n");
-			}
-		} else 
+		ftnw(f, nw);
+		float b;
+		nwtf(nw, &b);
+		if(fabs(f-b) > 0.019) {
+			printf("Error converting float %f: diff: %f (b: %f)\n", f, fabs(f-b),b);
 			++errors;
+		}
 	}
-	printf("Number of errors: %d/2000\n",errors);
+	printf("Number of errors: %d/%d\n",errors,2000+count);
 	free(nw);
 
 	printf("Setting up broadcast test on port 4711\n");
@@ -340,6 +290,7 @@ void test_network() {
 			printf("Recived wrong package:\n");
 		f.print(vars);
 	}
+	printf("%s\n", vars[3].str);
 	close_socket(sock1);
 	close_socket(sock2);
 }

@@ -3,9 +3,9 @@
 
 #define PORT 7412
 
-#define FRAME_SIZE 32
+#define FRAME_SIZE 128
 #define HASH_SIZE 4
-#define PAYLOAD_SIZE 28
+#define PAYLOAD_SIZE 124
 
 enum nw_var_type_t {
 	NW_VAR_FLOAT,

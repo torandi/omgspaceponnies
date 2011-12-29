@@ -8,16 +8,14 @@
 #include <map>
 
 class Client {
-	int _network_port;
 	int _sockfd;
 	nw_var_t * _vars;
 
 
 	public:
 		void incoming_network();
-		void outgoing_network();
 
-		std::vector<int, Player*> players; 
+		std::map<int, Player*> players; 
 
 		Client(const char* host, int port);
 		~Client();
@@ -27,6 +25,10 @@ class Client {
 		void create_me(const char * nick, int team);
 
 		Player * me;
+
+		void send_move(const vector_t &delta, float da);
+		void send_rotate(float da);
+		void send_fire();
 };
 
 extern Client * client;

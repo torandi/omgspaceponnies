@@ -39,6 +39,7 @@ public:
 	char &operator[] (int index);
 	void invalidate();
 	bool valid();
+	void print();
 };
 
 

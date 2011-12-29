@@ -6,14 +6,17 @@
 #include "network_lib.h"
 #include "socket.h"
 #include "player.h"
-#include "network.h"
 
 #include <map>
+#include <list>
+
+Server * server = NULL;
 
 Server::Server(int port) {
 	_vars = new nw_var_t[PAYLOAD_SIZE-1]; //Can't be more that this many vars
 	_network_port = port;
 	players = std::map<Player*, int>();
+	_new_connections = std::list<int>();
 	_next_player_id = 0;
    init_network();
 }
@@ -28,6 +31,8 @@ Server::~Server() {
 }
 
 void Server::run(double dt) {
+	check_new_connections();
+
 	incoming_network();
 
 	std::map<Player*, int>::iterator it;
@@ -36,7 +41,6 @@ void Server::run(double dt) {
 		it->first->logic(dt);
 	}
 
-	outgoing_network();
 }
 
 void Server::init_network() {
@@ -75,7 +79,7 @@ void Server::incoming_network() {
 					p->id = _next_player_id++;
 					players[p] = sockfd;
 					_vars[0].i = p->id;
-					send_frame(sockfd, addr, NW_CMD_ACCEPT, _vars);
+					send_frame(sockfd, no_addr, NW_CMD_ACCEPT, _vars);
 					_vars[1].set_str(p->nick.c_str());
 					_vars[2].i = p->team;
 					send_frame_to_all(NW_CMD_JOIN);
@@ -104,6 +108,17 @@ void Server::incoming_network() {
 						send_error(sockfd,"MOVE: Invalid player id");
 					}
 					break;
+				case NW_CMD_ROTATE:
+					if(p->id == _vars[0].i) {
+						//Save data to player:
+						p->angle = _vars[1].f;
+						p->da = _vars[2].f;
+						//Forward to all other:
+						send_frame_to_all(NW_CMD_ROTATE, p->id);
+					} else {
+						send_error(sockfd,"MOVE: Invalid player id");
+					}
+					break;
 				case NW_CMD_FIRE:
 					if(p->id == _vars[0].i) {
 						//mark fire
@@ -117,18 +132,59 @@ void Server::incoming_network() {
 			}	
 		}
 	}
+	std::list<int>::iterator new_it;
+	for(new_it=_new_connections.begin();new_it!=_new_connections.end(); ++new_it) {
+		int sockfd = *new_it;
+		if(data_available(sockfd)) {
+			addr_t addr;
+			frame_t f = read_frame(sockfd,_vars, &addr);
+			switch(f.cmd) {	
+				case NW_CMD_INVALID:
+					send_error(sockfd, "Invalid message");
+					break;
+				case NW_CMD_HELLO:
+					{
+						Player * p = new Player(_vars[0].str, _vars[1].i);
+						p->id = _next_player_id++;
+						players[p] = sockfd;
+						_vars[0].i = p->id;
+						_new_connections.erase(new_it);
+						send_frame(sockfd, no_addr, NW_CMD_ACCEPT, _vars);
+						_vars[1].set_str(p->nick.c_str());
+						_vars[2].i = p->team;
+						send_frame_to_all(NW_CMD_JOIN);
+						//Send all players to the new player:
+						for(it=players.begin(); it!=players.end(); ++it) {
+							if(it->second != sockfd) {
+								_vars[0].i = it->first->id;
+								_vars[1].set_str(it->first->nick.c_str());
+								_vars[2].i = it->first->team;
+								send_frame(sockfd, no_addr, NW_CMD_JOIN, _vars);
+							}
+						}
+						break;
+					}
+				default:
+					send_error(sockfd, "Command not accepted when not ACCEPTED");
+					break;
+			}
+		}
+	}
 }
 
-void Server::outgoing_network() {
-
+void Server::check_new_connections() {
+	int sockfd = accept_client(_sockfd);
+	if(sockfd != -1) {
+		printf("New client connected: %s\n", getpeer(sockfd).c_str());
+		_new_connections.push_back(sockfd);
+	}
 }
 
 void Server::send_frame_to_all(nw_cmd_t cmd, int ignore_player_id) {
-	addr_t addr;
 	std::map<Player*, int>::iterator it;
 	for(it=players.begin(); it!=players.end(); ++it) {
 		if(ignore_player_id != it->first->id)
-			send_frame(it->second,addr, cmd, _vars);
+			send_frame(it->second,no_addr, cmd, _vars);
 	}
 }
 
@@ -139,8 +195,7 @@ void Server::network_kill(Player * killer, Player * killed) {
 }
 
 void Server::network_score(Player * player) {
-	addr_t addr;
 	int client_sock = players[player];
 	_vars[0].i = player->score;
-	send_frame(client_sock,addr, NW_CMD_SCORE, _vars);
+	send_frame(client_sock,no_addr, NW_CMD_SCORE, _vars);
 }

@@ -6,6 +6,7 @@
 
 #include "texture.h"
 #include <GL/gl.h>
+#include <string>
 
 extern char * msg;
 
@@ -29,6 +30,9 @@ Texture::texcoord_t prepare_animation(animation_t * anim, double dt);
 float radians_to_degrees(double rad);
 //Make sure a angle is betweedn 0 and 2PI
 float period(float rad);
+
+void queue_announcement(std::string announcement);
+void log_message(std::string message);
 
 extern GLfloat rbcolors[12][3];				// Rainbow Of Colors
 extern float texture_colors[3];

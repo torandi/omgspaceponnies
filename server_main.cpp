@@ -8,7 +8,6 @@
 #include "logic.h"
 #include "level.h"
 #include "player.h"
-#include "network.h"
 #include "server.h"
 
 
@@ -17,6 +16,7 @@ int verbose_flag = 0;
 FILE* verbose = NULL;
 
 bool IS_SERVER = true;
+bool ready = true;
 
 static void show_usage(){
   fprintf(stderr, "./omgserver [options] nick\n");
@@ -61,6 +61,8 @@ int main(int argc, char* argv[]){
 	  verbose = fopen("/dev/null","w");
   }
 
+  printf("OMGSPACEPONNIES! - SERVER\n");
+
    server = new Server(network_port);
 
 	srand(time(NULL));
@@ -71,7 +73,6 @@ int main(int argc, char* argv[]){
 
   struct timeval ref;
   gettimeofday(&ref, NULL);
-
 
   while ( run ){
     struct timeval ts;

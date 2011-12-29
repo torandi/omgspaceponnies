@@ -6,13 +6,11 @@
 #include <vector>
 
 #include "common.h"
-#include "network.h"
 #include "client.h"
 #include "render.h"
 #include "logic.h"
 #include "level.h"
 
-bool keys[SDLK_LAST];
 
 float step = 0.0f;
 int verbose_flag = 0;
@@ -21,12 +19,11 @@ bool fullscreen = false;
 
 bool ready = false;
 
-vector_t mouse;
+bool IS_SERVER=false;
 
 static void setup(){
-	render_init(1024, 768, fullscreen);
+//	render_init(1024, 768, fullscreen);
 	init_level();
-	init_network();
 }
 
 static void cleanup(){
@@ -41,20 +38,20 @@ static void poll(bool* run){
 			switch (event.type){
 				case SDL_MOUSEBUTTONDOWN:
 					if(event.button.button == SDL_BUTTON_LEFT)
-						me->fire = true;
+						client->me->fire = true;
 					else if(event.button.button == SDL_BUTTON_WHEELUP)
-						me->shield_angle+=0.3;
+						client->me->shield_angle+=0.3;
 					else if(event.button.button == SDL_BUTTON_WHEELDOWN)
-						me->shield_angle-=0.3;
+						client->me->shield_angle-=0.3;
 					else if(event.button.button == SDL_BUTTON_RIGHT)
-						me->full_shield = true;
+						client->me->full_shield = true;
 					break;
 
 				case SDL_MOUSEBUTTONUP:
 					if(event.button.button == SDL_BUTTON_LEFT)
-						me->fire = false;
+						client->me->fire = false;
 					else if(event.button.button == SDL_BUTTON_RIGHT)
-						me->full_shield = false;
+						client->me->full_shield = false;
 					break;
 
 
@@ -103,6 +100,7 @@ static void show_usage(){
 
 int main(int argc, char* argv[]){
 	int verbose_flag;
+	int network_port = PORT;
   static struct option long_options[] =
   {
 		{"port",    required_argument, 0, 'p' },
@@ -135,7 +133,7 @@ int main(int argc, char* argv[]){
 	}
   }
 
-  if ( argc - optind != 2 ){
+  if ( argc - optind != 3 ){
 	show_usage();
     exit(1);
   }
@@ -144,9 +142,7 @@ int main(int argc, char* argv[]){
 
   const char * nick = argv[optind++];
   int team = atoi(argv[optind++])-1;
-
-  client = new Client(argv[optind++], network_port);
-  client->create_me(nick, team);
+  const char * hostname = argv[optind++];
 
   /* verbose dst */
   if ( verbose_flag ){
@@ -160,8 +156,12 @@ int main(int argc, char* argv[]){
 
   bool run = true;
 
+  //render_splash();
+  client = new Client(hostname, network_port);
+  client->create_me(nick, team);
+
 	while(!ready && run) {
-		render_splash();
+	//	render_splash();
 		usleep(1000);
 		poll(&run);
 		client->incoming_network();
@@ -184,7 +184,6 @@ int main(int argc, char* argv[]){
 	 client->incoming_network();
 	 logic(dt);
 	 client->run(dt);
-	 client->outgoing_network();
 	 render(dt);
 		 
     /* framelimiter */

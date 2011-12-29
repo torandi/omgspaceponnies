@@ -1,15 +1,19 @@
 #include <stdio.h>
 #include <math.h>
 #include <sys/time.h>
+#include <SDL/SDL.h>
 
 #include "common.h"
 #include "logic.h"
 #include "player.h"
-#include "network.h"
 #include "level.h"
+#include "client.h"
 
 #define SEND_DELAY 0.1f
 #define REPULSE_LIMIT 0.3f
+
+bool keys[SDLK_LAST];
+vector_t mouse;
 
 static double last_send=0;
 
@@ -107,31 +111,26 @@ void logic(double dt) {
 			delta.x/=dt;
 			delta.y/=dt;
 
+
 			if(delta.norm() > 1 || client->me->fire) {
-					sprintf(buffer, "omg mov %i %f %f %f %i %f %f %f", client->me->id, client->me->pos.x, client->me->pos.y, client->me->angle, client->me->current_base_texture, delta.x, delta.y, da);
-				send_msg(buffer);
+				client->send_move(delta, da);
 				has_sent_still = false;
 			} else if(!has_sent_still){
-				sprintf(buffer, "omg mov %i %f %f %f %i 0 0 %f", client->me->id, client->me->pos.x, client->me->pos.y, client->me->angle, client->me->current_base_texture, da);
-				send_msg(buffer);
+				client->send_move(vector_t(0,0), da);
 				has_sent_still = true;
 			} else if(da > 0.1) {
 				has_sent_no_rot = false;
-				sprintf(buffer, "omg rot %i %f %f",client->me->id, client->me->angle, da); 
-				send_msg(buffer);
+				client->send_rotate(da);
 			} else if(!has_sent_no_rot) {
 				has_sent_no_rot = true;
-				sprintf(buffer, "omg rot %i %f 0",client->me->id, client->me->angle); 
-				send_msg(buffer);
+				client->send_rotate(0);
 			}
 
 			if(client->me->fire) {
-				sprintf(buffer, "omg fir %i", client->me->id);
-				send_msg(buffer);
+				client->send_fire();
 				has_sent_no_fire = false;
 			} else if(!has_sent_no_fire) {
-				sprintf(buffer, "omg nof %i", client->me->id);
-				send_msg(buffer);
+				client->send_fire();
 				has_sent_no_fire = false;
 			}
 				
@@ -141,12 +140,6 @@ void logic(double dt) {
 		++client->me->dead;
 		if(client->me->dead > RESPAWN_TIME)
 			client->me->spawn();
-	}
-	//Update other:
-	for(int i=0; i < 4; ++i) {
-		if(i != client->me->id && players[i] != NULL) {
-			players[i]->logic(dt);	
-		}
 	}
 }
 

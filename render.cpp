@@ -1,14 +1,17 @@
 #include "render.h"
 #include "common.h"
 #include "player.h"
-#include <GL/gl.h>
-#include <SDL/SDL.h>
 #include "texture.h"
-#include <math.h>
 #include "render_object.h"
 #include "level.h"
+#include "client.h"
 
-char * msg;
+#include <GL/gl.h>
+#include <SDL/SDL.h>
+#include <string>
+#include <queue>
+#include <math.h>
+
 float flash_power = 0;
 
 #define DEBUG
@@ -26,6 +29,19 @@ static void render_walls(double dt);
 static int next_wall_color = 0;
 
 window_t window;
+
+#define ANNOUNCEMENT_ANIM_TIME 100
+#define ANNOUNCMENT_TIME 500
+#define ANNOUNCMENT_PAUSE 100
+
+#define NUM_LOG_MESSAGES 10
+
+static std::queue<std::string> announcements;
+static std::string messages[NUM_LOG_MESSAGES];
+static std::string * log_pos = messages;
+
+static std::string current_announcement = "";
+static int announcement_state = 0;
 
 static RenderObject splash;
 static RenderObject box;
@@ -100,7 +116,7 @@ void render(double dt){
 
 	glPushMatrix();
 
-	glTranslatef(-window.w*0.28+(window.w/2.0-me->pos.x)*0.2,-window.h*0.28+ (window.h/2.0-me->pos.y)*0.2, 0);
+	glTranslatef(-window.w*0.28+(window.w/2.0-client->me->pos.x)*0.2,-window.h*0.28+ (window.h/2.0-client->me->pos.y)*0.2, 0);
 	
 	texture_colors[1] = 0.3;
 	backdrop.render(dt);
@@ -112,12 +128,13 @@ void render(double dt){
 
 
 	//Center on player
-	glTranslatef(window.w/2.0-me->pos.x, window.h/2.0-me->pos.y,0);
+	glTranslatef(window.w/2.0-client->me->pos.x, window.h/2.0-client->me->pos.y,0);
 
 	//Render player fire
-	for(int i=0; i < NUM_PLAYERS; ++i) {
-		if(players[i] != NULL && players[i]->dead == 0) {
-			players[i]->render_fire(dt);
+	std::map<int, Player*>::iterator it;
+	for(it=client->players.begin(); it!=client->players.end(); ++it) {
+		if(it->second->dead == 0) {
+			it->second->render_fire(dt);
 		}
 	}
 
@@ -125,16 +142,16 @@ void render(double dt){
 	render_walls(dt);
 
 	//Render players
-	for(int i=0; i < NUM_PLAYERS; ++i) {
-		if(players[i] != NULL && players[i]->dead == 0) {
-			players[i]->render(dt);
+	for(it=client->players.begin(); it!=client->players.end(); ++it) {
+		if(it->second->dead == 0) {
+			it->second->render(dt);
 			#ifdef DEBUG
 				glPointSize(2.0f);
 				glColor3f(1,1,1);
 				glDisable(GL_TEXTURE_2D);
 				glBegin(GL_POINTS);
 					for(int c = 0; c<NUM_COLLISION_POINTS; ++c) {
-						vector_t v = players[i]->collision_point(c);
+						vector_t v = it->second->collision_point(c);
 						glVertex2f(v.x, v.y);
 					}
 				glEnd();
@@ -182,7 +199,7 @@ void render(double dt){
 	glEnd();
 
 
-	float ll = pw*me->power; //Line length
+	float ll = pw*client->me->power; //Line length
 	float lw = ph/12.0; //Line width
 	
 	glLineWidth(lw);
@@ -245,6 +262,18 @@ float period(float rad) {
 	}
 }
 
+void queue_announcement(std::string announcement) {
+	printf("[ANNOUNCEMENT] %s\n", announcement.c_str());
+	announcements.push(announcement);
+}
+
+void log_message(std::string message) {
+	printf("[LOG] %s\n", message.c_str());
+	*(log_pos++) = message;
+	if(log_pos - messages >= NUM_LOG_MESSAGES)
+		log_pos = messages;
+}
+
 static void glCircle3i(GLint x, GLint y, GLint radius) { 
 	float angle; 
 	glBegin(GL_LINE_LOOP); 
@@ -254,3 +283,5 @@ static void glCircle3i(GLint x, GLint y, GLint radius) {
 		} 
 	glEnd(); 
 } 
+
+

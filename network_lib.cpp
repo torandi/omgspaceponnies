@@ -20,6 +20,8 @@
 #include "socket.h"
 #include "protocol.h"
 
+#define DEBUG 1
+
 /*****
  * Contains network function shared by client and server
  *****/
@@ -42,7 +44,7 @@ addr_t no_addr;
  * vars[0] will be overwritten with the protocol cmd, put nothing or irrelevant data there
  */
 void send_frame(int sock, const addr_t &target, nw_cmd_t cmd, nw_var_t * vars) {
-	char * nw = (char*)malloc(FRAME_SIZE);
+	char * nw = (char*)malloc(FRAME_SIZE+1);
 	int pos = HASH_SIZE;	
 	uint16_t nwi;
 
@@ -56,6 +58,8 @@ void send_frame(int sock, const addr_t &target, nw_cmd_t cmd, nw_var_t * vars) {
 	const nw_var_type_t * var_types = protocol[cmd].var_types;
 	nw[pos] = cmd;
 	pos+=sizeof(char);
+
+	printf("Sending cmd #%i\n", cmd);
 
 	for(int i=0; i < num_vars; ++i) {
 		switch(var_types[i]) {
@@ -72,13 +76,13 @@ void send_frame(int sock, const addr_t &target, nw_cmd_t cmd, nw_var_t * vars) {
 				pos += sizeof(char);
 				break;
 			case NW_VAR_STR:
-				pos += strtnw(vars[i].str, nw);
+				pos += strtnw(vars[i].str, nw+pos);
 				break;
 		}
 	}
 
 	char hash[41];
-	get_hash(hash,(char*)nw+HASH_SIZE,PAYLOAD_SIZE);
+	get_hash(hash,nw+HASH_SIZE,PAYLOAD_SIZE);
 	memcpy(nw,hash,HASH_SIZE);
 	send_raw(sock, nw, target);
 	free(nw);
@@ -97,11 +101,16 @@ frame_t read_frame(int sock, nw_var_t * vars, addr_t * addr) {
 		int cmd;
 
 		//Read protocol cmd:
-		cmd = ((char*)nw.data)[0];
+		cmd = nw[0];
 		pos += sizeof(char);
 
 		const nw_var_type_t * var_types = protocol[cmd].var_types;
 		const int num_vars = protocol[cmd].num_vars;
+
+#if DEBUG
+		nw.print();
+		printf("Recived cmd #%i\n", cmd);
+#endif
 
 		for(int i=0;i<num_vars;++i) {
 			switch(var_types[i]) {
@@ -144,11 +153,11 @@ frame_t read_frame(int sock, nw_var_t * vars, addr_t * addr) {
  */
 static bool get_frame(int sock, network_data_t * nd) {
 
-	char buffer[FRAME_SIZE];
+	char buffer[FRAME_SIZE+1];
 
 	int r = read_raw(sock,buffer,FRAME_SIZE, 0, &nd->addr);
 	if(r != FRAME_SIZE) {
-		fprintf(stderr,"Invalid frame size recived");
+		fprintf(stderr,"Invalid frame size recived\n");
 		nd->invalidate();
 		return false;
 	}
@@ -180,7 +189,7 @@ static bool cmp_hash(char hash[HASH_SIZE],char * str,int len) {
  */
 static int ftnw(float f, void * nw) {
 	if(fabs(f) >= UINT16_MAX) {
-		fprintf(stderr,"Number to large. |%f| > %d\n", f,UINT16_MAX);
+		fprintf(stderr,"(ftnw: Number to large. |%f| > %d\n", f,UINT16_MAX);
 		return 0;
 	}
 	bool negative = (f<0);
@@ -282,9 +291,57 @@ void test_network() {
 		} else 
 			++errors;
 	}
+	float test[]={13.37};
+	int count = 1;
+	for(int i=0; i < count; ++i) {
+		float f=test[i];
+		printf("Converting float %f...",f);
+		if(ftnw(f, nw)==3) {
+			float b;
+			nwtf(nw, &b);
+			if(fabs(f-b) > 0.019) {
+				printf("diff: %f (b: %f)\n", fabs(f-b),b);
+				++errors;
+			} else {
+				printf("OK\n");
+			}
+		} else 
+			++errors;
+	}
 	printf("Number of errors: %d/2000\n",errors);
 	free(nw);
-	
+
+	printf("Setting up broadcast test on port 4711\n");
+	int sock1 = create_udp_socket(4711, true);
+	int sock2 = create_udp_socket(4711, true);
+	nw_var_t vars[4];
+	vars[0].i = 17;
+	vars[1].f = 13.371;
+	vars[2].c = 'z';
+
+	vars[3].set_str("hailol");
+	send_frame(sock1, broadcast_addr(4711), NW_CMD_TEST, vars);
+	printf("Waiting");
+	while(!data_available(sock2)) {
+		printf(".");
+		usleep(100);
+	}
+	printf("\n");
+	for(int i =0;i<4;++i) 
+		vars[i] = nw_var_t();
+	addr_t addr;
+	frame_t f = read_frame(sock2, vars, &addr);
+	if(f.cmd == NW_CMD_INVALID) {
+		printf("Invalid package recived\n");
+	} else {
+		if(f.cmd == NW_CMD_TEST)
+			printf("Recived correct package:\n");
+		else
+			printf("Recived wrong package:\n");
+		f.print(vars);
+	}
+	close_socket(sock1);
+	close_socket(sock2);
 }
 
 
@@ -348,4 +405,16 @@ void network_data_t::invalidate() {
 
 bool network_data_t::valid() {
 	return _valid;
+}
+
+void network_data_t::print() {
+	printf("network_data_t: { ");
+	for(int i=0;i<PAYLOAD_SIZE; ++i) {
+		if((*this)[i] >= 32 && (*this)[i] <=126) {
+			printf("[%i=%c] ", (*this)[i], (*this)[i]);
+		} else {
+			printf("%i ", (*this)[i]);
+		}
+	}
+	printf("}\n");
 }

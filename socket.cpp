@@ -14,6 +14,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#define DEBUG 1
+
 /*
  * Wrapper functions to simplify socket change
  */
@@ -27,7 +29,19 @@ ssize_t read_raw(int sock,void * buffer,size_t len, int flags, addr_t * src_addr
 }
 
 void send_raw(int sockfd, void * data, const addr_t &to_addr) {
-	if(sendto(sockfd, data, PAYLOAD_SIZE, 0, (sockaddr*) &to_addr.addr, sizeof(sockaddr_in))<0) {
+#if DEBUG
+	printf("send_raw:: { ");
+	for(int i=0;i<FRAME_SIZE; ++i) {
+		if(((char*)data)[i] >= 32 && ((char*)data)[i] <=126) {
+			printf("[%i=%c] ", ((char*)data)[i], ((char*)data)[i]);
+		} else {
+			printf("%i ", ((char*)data)[i]);
+		}
+	}
+	printf("}\n");
+#endif
+
+	if(sendto(sockfd, data, FRAME_SIZE, 0, (sockaddr*) &to_addr.addr, sizeof(sockaddr_in))<0) {
 		perror("send_raw()");
 	}
 }
@@ -64,7 +78,7 @@ int create_udp_socket(int port, bool broadcast) {
 		addr = create_addr(INADDR_ANY,port).addr;
 	}
 
-	if(bind(sockfd, (sockaddr *) &broadcast_addr, sizeof(sockaddr_in)) < 0) {
+	if(bind(sockfd, (sockaddr *) &addr, sizeof(sockaddr_in)) < 0) {
 		perror("network(): bind");
 		exit(1);
 	}
@@ -76,6 +90,8 @@ int create_tcp_client(const char * hostname, int port) {
 	int sockfd;
 	sockaddr_in serv_addr;
 
+	printf("Connecting to %s:%i\n", hostname, port);
+
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockfd < 0)  {
 		perror("ERROR opening socket");
@@ -84,14 +100,16 @@ int create_tcp_client(const char * hostname, int port) {
 
 	serv_addr = create_addr_from_hn(hostname, port).addr;
 
-	int x;
-	x=fcntl(sockfd,F_GETFL,0);
-	fcntl(sockfd,F_SETFL,x | O_NONBLOCK);
 
 	if (connect(sockfd,(sockaddr *) &serv_addr,sizeof(serv_addr)) < 0)  {
 		perror("Connection failed");
 		exit(1);
 	}
+	printf("Connected to %s:%i\n", hostname, port);
+
+	int x;
+	x=fcntl(sockfd,F_GETFL,0);
+	fcntl(sockfd,F_SETFL,x | O_NONBLOCK);
 
 	return sockfd;
 }
@@ -114,12 +132,17 @@ int create_tcp_server(int port) {
 
 	sockaddr_in addr = create_addr(INADDR_ANY,port).addr;
 
+	int x;
+	x=fcntl(sockfd,F_GETFL,0);
+	fcntl(sockfd,F_SETFL,x | O_NONBLOCK);
+
 	if (bind(sockfd, (sockaddr *) &addr, sizeof(addr)) < 0)  {
 		perror("network(): bind");
 		exit(1);
 	}
 
 	listen(sockfd,5);
+	printf("Listening on port %i\n", port);
 
 	return sockfd;
 }
@@ -127,9 +150,9 @@ int create_tcp_server(int port) {
 int accept_client(int sockfd) {
 	sockaddr_in cli_addr;
 	socklen_t clilen = sizeof(cli_addr);
-	int newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
+	int newsockfd = accept(sockfd, (sockaddr *) &cli_addr, &clilen);
 	if (newsockfd < 0) 
-		perror("ERROR on accept");
+		return -1;
 
 	int x;
 	x=fcntl(newsockfd,F_GETFL,0);
@@ -139,6 +162,25 @@ int accept_client(int sockfd) {
 
 void close_socket(int sock) {
 	close(sock);
+}
+
+std::string getpeer(int sock) {
+	socklen_t len;
+	struct sockaddr_storage addr;
+	char ipstr[INET6_ADDRSTRLEN];
+
+	len = sizeof addr;
+	getpeername(sock, (struct sockaddr*)&addr, &len);
+
+	// deal with both IPv4 and IPv6:
+	if (addr.ss_family == AF_INET) {
+		 struct sockaddr_in *s = (struct sockaddr_in *)&addr;
+		 inet_ntop(AF_INET, &s->sin_addr, ipstr, sizeof ipstr);
+	} else { // AF_INET6
+		 struct sockaddr_in6 *s = (struct sockaddr_in6 *)&addr;
+		 inet_ntop(AF_INET6, &s->sin6_addr, ipstr, sizeof ipstr);
+	}
+	return std::string(ipstr);
 }
 
 addr_t create_addr(uint32_t address, int port) {

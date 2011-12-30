@@ -10,6 +10,7 @@
 //#define PI 3.14159265
 
 #define SPEED 300.0f
+#define BROADCAST_PORT 7411
 
 extern FILE* verbose;
 

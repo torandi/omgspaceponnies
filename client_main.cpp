@@ -4,6 +4,7 @@
 #include <SDL/SDL.h>
 #include <getopt.h>
 #include <vector>
+#include <signal.h>
 
 #include "common.h"
 #include "client.h"
@@ -93,7 +94,8 @@ static void poll(bool* run){
 
 
 static void show_usage(){
-  fprintf(stderr, "./omgponnies [options] nick team(1-4) server\n");
+  fprintf(stderr, "./omgponnies [options] nick team(1-4) [server]\n");
+  fprintf(stderr, "If server is ignored we will try to find one for you on the local network\n");
   fprintf(stderr, "  -p, --port=PORT Use PORT for communication (default: %d).\n", PORT);
   fprintf(stderr, "  -h, --help      This help text.\n");
 }
@@ -133,16 +135,58 @@ int main(int argc, char* argv[]){
 	}
   }
 
-  if ( argc - optind != 3 ){
+  if ( ! (argc - optind == 2 || argc - optind == 3) ){
 	show_usage();
     exit(1);
   }
 
-	setup();
 
-  const char * nick = argv[optind++];
-  int team = atoi(argv[optind++])-1;
-  const char * hostname = argv[optind++];
+	const char * nick = argv[optind++];
+	int team = atoi(argv[optind++])-1;
+	std::string hostname="";
+	
+  nw_var_t vars[PAYLOAD_SIZE-1];
+
+  if(optind - argc == 1)
+	  hostname = std::string(argv[optind++]);
+  else {
+	//Try to find with broadcast
+	int sockfd = create_udp_socket(BROADCAST_PORT, true);
+	for(int i=0;i<5; ++i) {
+		printf("Hello, anybody out there?\n");
+		send_frame(sockfd, broadcast_addr(BROADCAST_PORT), NW_CMD_FIND_SERVER, vars);
+		for(int n=0; n<5; ++n) { //Accept 5 other messages
+			if(data_available(sockfd,2,0)) {
+				addr_t addr;
+				frame_t f = read_frame(sockfd,vars, &addr);
+				if(f.cmd == NW_CMD_EXISTS_SERVER) {
+					hostname = addr.hostname();
+					network_port = vars[0].i;
+
+					printf("Yey, found one. Now I'm happy :D\n");
+					printf("There is a server at %s:%d with %d players\n", hostname.c_str(), network_port, vars[1].i);
+					goto done_searching;
+				} else {
+					f.print(vars);
+				}
+			} else 
+				break;
+		} 
+		printf("Nope :( Maybe later?\n");
+		usleep(3000000);
+	}
+	done_searching:
+	signal(SIGPIPE, SIG_IGN); //Ignore sigpipe
+	close_socket(sockfd);
+	signal(SIGPIPE, SIG_DFL); //Restore
+
+	if(hostname == "") {
+		printf("No local server found\n");
+		exit(3);
+	}
+  }
+
+	setup();
 
   /* verbose dst */
   if ( verbose_flag ){
@@ -157,7 +201,7 @@ int main(int argc, char* argv[]){
   bool run = true;
 
   render_splash();
-  client = new Client(hostname, network_port);
+  client = new Client(hostname.c_str(), network_port);
   client->create_me(nick, team);
 
 	while(!ready && run) {

@@ -44,7 +44,7 @@ void Client::send_cmd(nw_cmd_t cmd) {
 }
 
 void Client::incoming_network() {
-	if(data_available(_sockfd)) {
+	if(data_available(_sockfd,0,0)) {
 		addr_t addr;
 		frame_t f = read_frame(_sockfd,_vars, &addr);
 		if(ready) {

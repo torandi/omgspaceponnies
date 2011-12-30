@@ -274,7 +274,7 @@ void test_network() {
 	vars[3].set_str("hailol");
 	send_frame(sock1, broadcast_addr(4711), NW_CMD_TEST, vars);
 	printf("Waiting");
-	while(!data_available(sock2)) {
+	while(!data_available(sock2, 0,0 )) {
 		printf(".");
 		usleep(100);
 	}

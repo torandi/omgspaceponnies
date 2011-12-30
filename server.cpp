@@ -6,6 +6,7 @@
 #include "network_lib.h"
 #include "socket.h"
 #include "player.h"
+#include "common.h"
 
 #include <map>
 #include <list>
@@ -13,12 +14,12 @@
 Server * server = NULL;
 
 Server::Server(int port) {
-	_vars = new nw_var_t[PAYLOAD_SIZE-1]; //Can't be more that this many vars
-	_network_port = port;
-	players = std::map<Player*, int>();
-	_new_connections = std::list<int>();
-	_next_player_id = 0;
-   init_network();
+_vars = new nw_var_t[PAYLOAD_SIZE-1]; //Can't be more that this many vars
+_network_port = port;
+players = std::map<Player*, int>();
+_new_connections = std::list<int>();
+_next_player_id = 0;
+init_network();
 }
 
 Server::~Server() {
@@ -52,6 +53,7 @@ void Server::remove_player(Player * p) {
 
 void Server::init_network() {
 	_sockfd = create_tcp_server(_network_port);
+	_broadcast_sockfd = create_udp_socket(BROADCAST_PORT, true);
 }
 
 void Server::send_error(int sockfd, const char * msg) {
@@ -65,7 +67,7 @@ void Server::incoming_network() {
 	for(it=players.begin(); it!=players.end(); ++it) {
 		int sockfd = it->second;
 		Player * p = it->first;
-		if(data_available(sockfd)) {
+		if(data_available(sockfd,0,0)) {
 			addr_t addr;
 			frame_t f = read_frame(sockfd,_vars, &addr);
 			switch(f.cmd) {
@@ -137,7 +139,7 @@ void Server::incoming_network() {
 	std::list<int>::iterator new_it;
 	for(new_it=_new_connections.begin();new_it!=_new_connections.end(); ++new_it) {
 		int sockfd = *new_it;
-		if(data_available(sockfd)) {
+		if(data_available(sockfd,0,0)) {
 			addr_t addr;
 			frame_t f = read_frame(sockfd,_vars, &addr);
 			switch(f.cmd) {	
@@ -180,6 +182,17 @@ void Server::incoming_network() {
 					send_error(sockfd, "Command not accepted when not ACCEPTED");
 					break;
 			}
+		}
+	}
+
+	//Check broadcast port:
+	if(data_available(_broadcast_sockfd, 0, 0)) {
+		addr_t addr;
+		frame_t f = read_frame(_broadcast_sockfd,_vars, &addr);
+		if(f.cmd == NW_CMD_FIND_SERVER) {
+			_vars[0].i = _network_port;
+			_vars[1].i = players.size();
+			send_frame(_broadcast_sockfd, addr, NW_CMD_EXISTS_SERVER, _vars);
 		}
 	}
 }

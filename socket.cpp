@@ -75,11 +75,7 @@ int create_udp_socket(int port, bool broadcast) {
 	fcntl(sockfd,F_SETFL,x | O_NONBLOCK);
 	sockaddr_in addr;
 
-	if(broadcast) {
-		addr = broadcast_addr(port).addr;
-	} else {
-		addr = create_addr(INADDR_ANY,port).addr;
-	}
+	addr = create_addr(INADDR_ANY,port).addr;
 
 	if(bind(sockfd, (sockaddr *) &addr, sizeof(sockaddr_in)) < 0) {
 		perror("network(): bind");
@@ -216,15 +212,21 @@ addr_t create_addr_from_hn(const char * hostname, int port) {
 	return addr;
 }
 
-bool data_available(int sock) {
+bool data_available(int sock, int wait_sec, int wait_usec) {
 	fd_set readset;
 	struct timeval tv;
 
 	FD_ZERO(&readset);
 	FD_SET(sock,&readset);
 
-	tv.tv_sec = 0;
-	tv.tv_usec = 0;
+	tv.tv_sec = wait_sec;
+	tv.tv_usec = wait_usec;
 
 	return (select(sock+1,&readset,NULL,NULL,&tv) > 0);
+}
+
+std::string addr_t::hostname() {
+	char dst[INET6_ADDRSTRLEN];
+	inet_ntop(addr.sin_family, (void*)&addr.sin_addr, dst, INET6_ADDRSTRLEN);
+	return std::string(dst);
 }

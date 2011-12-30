@@ -21,6 +21,8 @@ struct addr_t {
 		bzero((char *) &addr, sizeof(addr));
 		len = sizeof(addr);	
 	};
+
+	std::string hostname();
 };
 
 /**
@@ -34,7 +36,8 @@ int create_tcp_server(int port);
 int create_tcp_client(const char * hostname, int port);
 int accept_client(int sockfd);
 void close_socket(int sock);
-bool data_available(int sock);
+bool data_available(int sock, int wait_sec, int wait_usec);
+void bind(int sockfd, int port);
 
 std::string getpeer(int sock);
 

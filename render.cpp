@@ -40,8 +40,8 @@ std::string msg;
 
 window_t window;
 
-#define ANNOUNCEMENT_ANIM_TIME 2.0f
-#define ANNOUNCMENT_TIME 3.0f
+#define ANNOUNCEMENT_ANIM_TIME 1.5f
+#define ANNOUNCMENT_TIME 1.0f
 
 #define NUM_LOG_MESSAGES 10
 
@@ -258,12 +258,10 @@ void render(double dt){
 		glMultMatrixf(text_matrix);
 		if(announcement_state > (ANNOUNCEMENT_ANIM_TIME+ANNOUNCMENT_TIME)) { 
 			//Fade out announcement
-			printf("Fading out announcement: %.2f\n", 1.0f-(announcement_state - (ANNOUNCEMENT_ANIM_TIME+ANNOUNCMENT_TIME))/ANNOUNCEMENT_ANIM_TIME);
-			glColor4f(1,1,1,1.0f-(announcement_state - (ANNOUNCEMENT_ANIM_TIME+ANNOUNCMENT_TIME))/ANNOUNCEMENT_ANIM_TIME);
+			glColor4f(1,1,1,1.0f-0.9f*(announcement_state - (ANNOUNCEMENT_ANIM_TIME+ANNOUNCMENT_TIME))/ANNOUNCEMENT_ANIM_TIME);
 		} else if(announcement_state <= (ANNOUNCEMENT_ANIM_TIME)) {
 			//Fade in
-			glColor4f(1,1,1,(float)announcement_state/ANNOUNCEMENT_ANIM_TIME);
-			printf("Fading in announcement: %.2f\n", (float)announcement_state/ANNOUNCEMENT_ANIM_TIME);
+			glColor4f(1,1,1,0.1f+0.9f*announcement_state/ANNOUNCEMENT_ANIM_TIME);
 		}
 		announcement_font->Render(current_announcement.c_str());
 		glPopMatrix();

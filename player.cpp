@@ -242,15 +242,24 @@ void Player::logic(double dt, float last_angle) {
 
 		if(!IS_SERVER && client->me->id != id)
 			last_angle = angle;
-
-		//Collision detect on the collision points:
-		for(int i = 0; i < NUM_COLLISION_POINTS; ++i) {
-			int mx, my;
-			vector_t cp = collision_point(i);
-			calc_map_index(cp, mx, my);
-			if(map_value(mx, my)>0) {
-				hndl_collision(mx,my,i, cp, last_angle , dt);
+		bool hit = true;
+		for(int tries=0;tries < 3 && hit; ++tries) {
+			hit = false;
+			for(int i = 0; i < NUM_COLLISION_POINTS; ++i) {
+				int mx, my;
+				vector_t cp = collision_point(i);
+				calc_map_index(cp, mx, my);
+				if(map_value(mx, my)>0) {
+					hit = true;
+					hndl_collision(mx,my,i, cp, last_angle , dt);
+				}
 			}
+		}
+		if(hit) {
+			printf("GAH! STILL IN COLLISION!\n");
+			angle = last_angle;
+			pos = last;
+			velocity*=ELASTICITY;
 		}
 	}
 }
@@ -271,12 +280,13 @@ void Player::hndl_collision(int mx, int my, int cp_index, const vector_t &cp, fl
 
 	vector_t old_cp = collision_point(cp_index, &last_angle);
 
-	vector_t rotation_impuls = old_cp - cp;
-
-	velocity+= (rotation_impuls/dt)*0.4;
+//	vector_t rotation_impuls = old_cp - cp;
+//	velocity+= (rotation_impuls/dt)*0.4;
 	
-	pos += velocity*dt + rotation_impuls;
+	pos += velocity*dt;// + rotation_impuls;
 	velocity *= ELASTICITY;
+
+	angle = last_angle;
 }
 
 bool Player::use_power(float amount) {

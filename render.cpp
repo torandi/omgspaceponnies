@@ -19,9 +19,9 @@ float flash_power = 0;
 
 GLfloat rbcolors[12][3]=				// Rainbow Of Colors
 {
-{1.0f,0.5f,0.5f},{1.0f,0.75f,0.5f},{1.0f,1.0f,0.5f},{0.75f,1.0f,0.5f},
-{0.5f,1.0f,0.5f},{0.5f,1.0f,0.75f},{0.5f,1.0f,1.0f},{0.5f,0.75f,1.0f},
-{0.5f,0.5f,1.0f},{0.75f,0.5f,1.0f},{1.0f,0.5f,1.0f},{1.0f,0.5f,0.75f}
+	{1.0f,0.5f,0.5f},{1.0f,0.75f,0.5f},{1.0f,1.0f,0.5f},{0.75f,1.0f,0.5f},
+	{0.5f,1.0f,0.5f},{0.5f,1.0f,0.75f},{0.5f,1.0f,1.0f},{0.5f,0.75f,1.0f},
+	{0.5f,0.5f,1.0f},{0.75f,0.5f,1.0f},{1.0f,0.5f,1.0f},{1.0f,0.5f,0.75f}
 };
 
 static void glCircle3i(GLint x, GLint y, GLint radius);
@@ -33,9 +33,6 @@ const float text_matrix[] = 	{ 1.0f,  0.0f, 0.0f, 0.0f,
 										0.0f,  0.0f, 1.0f, 0.0f,
 										0.0f,  0.0f, 0.0f, 1.0f };
 
-#define NICK_FONT_SIZE 12.0f
-#define ANNOUNCEMENT_FONT_SIZE 48.0f
-#define CONSOLE_LOG_FONT_SIZE 12.0f
 
 static int next_wall_color = 0;
 

@@ -104,6 +104,7 @@ void Player::render(double dt) {
 	glPushMatrix();
 
 	glTranslatef(pos.x, pos.y, 0);
+	glPushMatrix();
 	glRotatef(radians_to_degrees(angle+M_PI_2), 0, 0, 1.0);
 	glTranslatef(-PLAYER_W*0.5,-PLAYER_H*0.5, 0);
 
@@ -115,6 +116,14 @@ void Player::render(double dt) {
 		textures[current_base_texture].render(dt);
 	if(fire)
 		textures[TEXTURE_DISPENCER].render(dt);
+	
+	glPopMatrix();
+
+	glPushMatrix();
+		glMultMatrixf(text_matrix);
+		glTranslatef(-(2*nick.length()*NICK_FONT_SIZE)/7,PLAYER_H/1.4f,0.0f);
+		nick_font->Render(nick.c_str());
+	glPopMatrix();
 
 	glPopMatrix();
 
@@ -175,6 +184,8 @@ void Player::render(double dt) {
 	
 
 	texture_colors[1]=0.5;
+
+
 
 }
 

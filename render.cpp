@@ -27,7 +27,7 @@ GLfloat rbcolors[12][3]=				// Rainbow Of Colors
 static void glCircle3i(GLint x, GLint y, GLint radius);
 static void render_walls(double dt);
 
-FTGLTextureFont * nick_font, *announcement_font, *console_font;
+FTGLTextureFont * nick_font, *announcement_font, *console_font, *misc_font;
 const float text_matrix[] = 	{ 1.0f,  0.0f, 0.0f, 0.0f,
 										0.0f, -1.0f, 0.0f, 0.0f,
 										0.0f,  0.0f, 1.0f, 0.0f,
@@ -36,11 +36,12 @@ const float text_matrix[] = 	{ 1.0f,  0.0f, 0.0f, 0.0f,
 
 static int next_wall_color = 0;
 
+std::string msg;
+
 window_t window;
 
-#define ANNOUNCEMENT_ANIM_TIME 100
-#define ANNOUNCMENT_TIME 500
-#define ANNOUNCMENT_PAUSE 100
+#define ANNOUNCEMENT_ANIM_TIME 2.0f
+#define ANNOUNCMENT_TIME 3.0f
 
 #define NUM_LOG_MESSAGES 10
 
@@ -49,7 +50,7 @@ static std::string messages[NUM_LOG_MESSAGES];
 static std::string * log_pos = messages;
 
 static std::string current_announcement = "";
-static int announcement_state = 0;
+static float announcement_state = -1.0f;
 
 static RenderObject splash;
 static RenderObject box;
@@ -79,6 +80,9 @@ Texture::texcoord_t prepare_animation(animation_t * anim, double dt) {
 
 
 void render_init(int w, int h, bool fullscreen){
+
+	msg="Loading...";
+
   /* create window */
   SDL_Init(SDL_INIT_VIDEO);
   int flags = SDL_OPENGL | SDL_DOUBLEBUF;
@@ -119,11 +123,17 @@ void render_init(int w, int h, bool fullscreen){
 	announcement_font->FaceSize(ANNOUNCEMENT_FONT_SIZE);
 	console_font= new FTTextureFont("fonts/console.ttf");
 	console_font->FaceSize(CONSOLE_LOG_FONT_SIZE);
+	misc_font = new FTTextureFont("fonts/misc.ttf");
+	misc_font->FaceSize(12.0f);
 }
 
 void render_splash() {
 	glClear(GL_COLOR_BUFFER_BIT);
 	splash.render(0);
+	
+	misc_font->FaceSize(25.0f);
+	render_text(msg.c_str(), misc_font, vector_t(2.0f,window.h-2.0f));
+	
 	SDL_GL_SwapBuffers();
 }
 
@@ -231,9 +241,46 @@ void render(double dt){
 
 	glEnable(GL_TEXTURE_2D);
 	glPopMatrix();
-	
+
+	/* Render announcement */
+	if(announcement_state <= 0 && !announcements.empty()) {
+		current_announcement = announcements.front();
+		printf("Show announcement: %s\n", current_announcement.c_str());
+		announcements.pop();
+		announcement_state = 0.001f;
+	}
+
+	if(announcement_state > (2*ANNOUNCEMENT_ANIM_TIME+ANNOUNCMENT_TIME)) {
+		announcement_state = -1.0f;
+	} else if(announcement_state > 0) {
+		glPushMatrix();
+		glTranslatef((window.w/2.0f)-(ANNOUNCEMENT_FONT_SIZE*current_announcement.length()/4.0f), window.h/2.0f,0.0f);
+		glMultMatrixf(text_matrix);
+		if(announcement_state > (ANNOUNCEMENT_ANIM_TIME+ANNOUNCMENT_TIME)) { 
+			//Fade out announcement
+			printf("Fading out announcement: %.2f\n", 1.0f-(announcement_state - (ANNOUNCEMENT_ANIM_TIME+ANNOUNCMENT_TIME))/ANNOUNCEMENT_ANIM_TIME);
+			glColor4f(1,1,1,1.0f-(announcement_state - (ANNOUNCEMENT_ANIM_TIME+ANNOUNCMENT_TIME))/ANNOUNCEMENT_ANIM_TIME);
+		} else if(announcement_state <= (ANNOUNCEMENT_ANIM_TIME)) {
+			//Fade in
+			glColor4f(1,1,1,(float)announcement_state/ANNOUNCEMENT_ANIM_TIME);
+			printf("Fading in announcement: %.2f\n", (float)announcement_state/ANNOUNCEMENT_ANIM_TIME);
+		}
+		announcement_font->Render(current_announcement.c_str());
+		glPopMatrix();
+		glColor4f(1,1,1,1);
+		announcement_state+=dt;
+	}
+
 
 	SDL_GL_SwapBuffers();
+}
+
+void render_text(const char * str, FTTextureFont * font, vector_t pos) {
+	glPushMatrix();
+		glTranslatef(pos.x,pos.y,0.0f);
+		glMultMatrixf(text_matrix);
+		font->Render(str);
+	glPopMatrix();
 }
 
 float radians_to_degrees(double rad) {

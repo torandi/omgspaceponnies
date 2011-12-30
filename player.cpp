@@ -119,12 +119,7 @@ void Player::render(double dt) {
 	
 	glPopMatrix();
 
-	glPushMatrix();
-		glMultMatrixf(text_matrix);
-		glTranslatef(-(2*nick.length()*NICK_FONT_SIZE)/7,PLAYER_H/1.4f,0.0f);
-		nick_font->Render(nick.c_str());
-	glPopMatrix();
-
+	render_text(nick.c_str(), nick_font, vector_t(-(2*nick.length()*NICK_FONT_SIZE)/7,-PLAYER_H/1.4f));
 	glPopMatrix();
 
 

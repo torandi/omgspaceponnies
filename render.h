@@ -5,18 +5,20 @@
 #define PLAYER_H 132
 
 #define NICK_FONT_SIZE 18.0f
-#define ANNOUNCEMENT_FONT_SIZE 48.0f
+#define ANNOUNCEMENT_FONT_SIZE 52.0f
 #define CONSOLE_LOG_FONT_SIZE 12.0f
 
 #include "texture.h"
+#include "vector.h"
+
 #include <GL/gl.h>
 #include <FTGL/ftgl.h>
 #include <string>
 
-extern char * msg;
+extern std::string msg;
 
 extern float flash_power;
-extern FTGLTextureFont * nick_font, *announcement_font, *console_font;
+extern FTGLTextureFont * nick_font, *announcement_font, *console_font, *misc_font;
 
 void render_init(int w, int h, bool fullscreen);
 void render(double dt);
@@ -37,10 +39,10 @@ float radians_to_degrees(double rad);
 //Make sure a angle is betweedn 0 and 2PI
 float period(float rad);
 
-extern const float text_matrix[];
-
 void queue_announcement(std::string announcement);
 void log_message(std::string message);
+
+void render_text(const char * str, FTTextureFont * font, vector_t pos);
 
 extern GLfloat rbcolors[12][3];				// Rainbow Of Colors
 extern float texture_colors[3];

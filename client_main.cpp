@@ -144,18 +144,26 @@ int main(int argc, char* argv[]){
 	const char * nick = argv[optind++];
 	int team = atoi(argv[optind++])-1;
 	std::string hostname="";
-	
+
+
+	setup();
+  bool run = true;
+
+	   render_splash();
+
   nw_var_t vars[PAYLOAD_SIZE-1];
 
   if(optind - argc == 1)
 	  hostname = std::string(argv[optind++]);
   else {
+	msg = "Searching for server...";
 	//Try to find with broadcast
 	int sockfd = create_udp_socket(BROADCAST_PORT, true);
-	for(int i=0;i<5; ++i) {
+	for(int i=0;i<5 && run; ++i) {
+	   render_splash();
 		printf("Hello, anybody out there?\n");
 		send_frame(sockfd, broadcast_addr(BROADCAST_PORT), NW_CMD_FIND_SERVER, vars);
-		for(int n=0; n<5; ++n) { //Accept 5 other messages
+		for(int n=0; n<5 && run; ++n) { //Accept 5 other messages
 			if(data_available(sockfd,2,0)) {
 				addr_t addr;
 				frame_t f = read_frame(sockfd,vars, &addr);
@@ -166,14 +174,13 @@ int main(int argc, char* argv[]){
 					printf("Yey, found one. Now I'm happy :D\n");
 					printf("There is a server at %s:%d with %d players\n", hostname.c_str(), network_port, vars[1].i);
 					goto done_searching;
-				} else {
-					f.print(vars);
 				}
 			} else 
 				break;
 		} 
 		printf("Nope :( Maybe later?\n");
-		usleep(3000000);
+		poll(&run);
+		usleep(2000000);
 	}
 	done_searching:
 	signal(SIGPIPE, SIG_IGN); //Ignore sigpipe
@@ -182,11 +189,14 @@ int main(int argc, char* argv[]){
 
 	if(hostname == "") {
 		printf("No local server found\n");
+		cleanup();
 		exit(3);
 	}
   }
-
-	setup();
+  char buffer[256];
+  sprintf(buffer, "Connecting to %s:%d...", hostname.c_str(), network_port);
+  msg = std::string(buffer);
+  render_splash();
 
   /* verbose dst */
   if ( verbose_flag ){
@@ -198,11 +208,11 @@ int main(int argc, char* argv[]){
 	srand(time(NULL));
 
 
-  bool run = true;
 
-  render_splash();
   client = new Client(hostname.c_str(), network_port);
   client->create_me(nick, team);
+
+	msg = "Connected, loading game...";
 
 	while(!ready && run) {
 		render_splash();

@@ -106,7 +106,7 @@ void Client::incoming_network() {
 						if(killed->id == me->id) {
 							queue_announcement(std::string("KILLED BY ")+killer->nick);
 						} else if(killer->id == me->id && killed->team != me->team) {
-							sprintf(buffer, "KILLED %s! %ip", killed->nick.c_str(), KILL_SCORE);
+							sprintf(buffer, "KILLED %s +%ip", killed->nick.c_str(), KILL_SCORE);
 							queue_announcement(std::string(buffer));
 						} else if(killer->id == me->id)  {
 							sprintf(buffer, "TEAMKILL! %ip", TEAM_KILL_SCORE);

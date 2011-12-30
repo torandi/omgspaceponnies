@@ -7,6 +7,7 @@
 #include "client.h"
 
 #include <GL/gl.h>
+#include <FTGL/ftgl.h>
 #include <SDL/SDL.h>
 #include <string>
 #include <queue>
@@ -25,6 +26,16 @@ GLfloat rbcolors[12][3]=				// Rainbow Of Colors
 
 static void glCircle3i(GLint x, GLint y, GLint radius);
 static void render_walls(double dt);
+
+FTGLTextureFont * nick_font, *announcement_font, *console_font;
+const float text_matrix[] = 	{ 1.0f,  0.0f, 0.0f, 0.0f,
+										0.0f, -1.0f, 0.0f, 0.0f,
+										0.0f,  0.0f, 1.0f, 0.0f,
+										0.0f,  0.0f, 0.0f, 1.0f };
+
+#define NICK_FONT_SIZE 12.0f
+#define ANNOUNCEMENT_FONT_SIZE 48.0f
+#define CONSOLE_LOG_FONT_SIZE 12.0f
 
 static int next_wall_color = 0;
 
@@ -103,6 +114,14 @@ void render_init(int w, int h, bool fullscreen){
   splash = RenderObject("gfx/splash.png", 1, 0,vector_t(1024,768));
   backdrop = RenderObject("gfx/space.jpg", 1, 0,vector_t(1600,1200));
   box = RenderObject("gfx/box.png", 1, 0,vector_t(64,64));
+
+  /* load fonts */
+	nick_font = new FTTextureFont("fonts/nick.ttf");
+	nick_font->FaceSize(NICK_FONT_SIZE);
+	announcement_font = new FTTextureFont("fonts/announcement.ttf");
+	announcement_font->FaceSize(ANNOUNCEMENT_FONT_SIZE);
+	console_font= new FTTextureFont("fonts/console.ttf");
+	console_font->FaceSize(CONSOLE_LOG_FONT_SIZE);
 }
 
 void render_splash() {
@@ -283,5 +302,3 @@ static void glCircle3i(GLint x, GLint y, GLint radius) {
 		} 
 	glEnd(); 
 } 
-
-

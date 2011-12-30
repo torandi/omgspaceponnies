@@ -47,6 +47,7 @@ void Server::run(double dt) {
 void Server::remove_player(Player * p) {
 	close_socket(players[p]);
 	_vars[0].i = p->id;
+	printf("Disconnected player %s\n", p->nick.c_str());
 	players.erase(p);
 	send_frame_to_all(NW_CMD_QUIT);
 }

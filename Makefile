@@ -1,8 +1,8 @@
 CLIENT_OBJS = client.o client_main.o render.o texture.o resource.o player.o logic.o render_object.o level.o sha1.o network_lib.o socket.o protocol.o server.o
 SERVER_OBJS = client.o server_main.o render.o texture.o resource.o player.o logic.o render_object.o level.o sha1.o network_lib.o socket.o protocol.o server.o
 SPRITES = dispencer.png tail.png
-CFLAGS += -Wall `sdl-config --cflags` -g 
-LDFLAGS += `sdl-config --libs`  -lGL -lSDL_image
+CFLAGS += -Wall `sdl-config --cflags` -g `pkg-config --cflags ftgl`
+LDFLAGS += `sdl-config --libs`  -lGL -lSDL_image `pkg-config --libs ftgl`
 
 all: omgspaceponies omgserver
  

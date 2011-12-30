@@ -13,7 +13,7 @@
 #include <math.h>
 #include <sys/time.h>
 
-#define REPULSE_LIMIT 0.3f
+#define REPULSE_LIMIT 0.01f
 
 Player::Player(const char * n, int _team) {
 	nick = std::string(n);

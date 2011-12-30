@@ -8,7 +8,7 @@
 
 #define MAX_FIRE_LENGHT 1024
 
-#define RESPAWN_TIME 60
+#define RESPAWN_TIME 300
 
 #define NUM_COLLISION_POINTS 8
 

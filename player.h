@@ -52,6 +52,7 @@ struct Player {
 	RenderObject textures[TEXTURE_LAST];
 	float angle;
 	float power;
+	int health;
 
 	Player(const char * nick, int _team);
 	void spawn();

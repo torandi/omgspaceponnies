@@ -27,6 +27,7 @@ void Player::init(int _team) {
 	fire = false;
 	team = _team;
 	dead = 1;
+	health = 0;
 	full_shield = false;
 	score = 0;
 	flash_power = 0;
@@ -86,6 +87,7 @@ void Player::spawn() {
 	dead = 0;
 	power = 1.0;
 	angle = M_PI;
+	health = 100;
 	client->send_spawn();
 }
 
@@ -93,6 +95,7 @@ void Player::spawn_remote(vector_t new_pos) {
 	pos = new_pos;
 	dead = 0;
 	power = 1.0;
+	health = 100;
 	angle = M_PI;
 }
 

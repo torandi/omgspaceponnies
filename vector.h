@@ -82,6 +82,10 @@ struct vector_t {
 		return std::sqrt(x*x+y*y);
 	}
 
+	float norm2() const {
+		return x*x+y*y;
+	}
+
 	vector_t normalized() const {
 		return vector_t(x/norm(), y/norm());
 	}

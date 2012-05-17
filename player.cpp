@@ -325,14 +325,15 @@ bool Player::use_power(float amount) {
 
 bool Player::calc_player_hit(Player * player, double dt) {
 	if(player->id != id && player->dead == 0) {
-		if(player->shield_hit(this) && player->use_power(SHIELD_HIT_POWER_DRAIN*dt) ) {
-			player->sync_power();
-			return true;
-		} else {
-			vector_t d;
-			d.x = fire_end.x - player->pos.x;
-			d.y = fire_end.y - player->pos.y;
-			if(d.norm() < PLAYER_W/2.0)  {
+		vector_t d;
+		d.x = fire_end.x - player->pos.x;
+		d.y = fire_end.y - player->pos.y;
+		
+		if(d.norm() < SHIELD_RADIUS) {
+			if(player->shield_hit(this) && player->use_power(SHIELD_HIT_POWER_DRAIN*dt) ) {
+				player->sync_power();
+				return true;
+			} else if(d.norm() < PLAYER_W/2.0)  {
 				if(IS_SERVER) {
 					player->dead = 1;
 					if(team != player->team)
@@ -395,6 +396,8 @@ bool Player::find_shield_intersection(Player * player, vector_t * ret) {
 		float t2 = (-b - discriminant)/(2*a);
 
 		float t = std::min(t1, t2);
+		if(t < 0)
+			return false;
 		s1 = player->pos + d*t - pos;
 
 		*ret = player->pos + d*t;
@@ -407,9 +410,10 @@ void Player::calc_fire(double dt) {
 	int len = 0;
 	while(len < MAX_FIRE_LENGHT) {
 		len += 32;
-		vector_t prev(fire_end);
 		fire_end.x+= 32*cos(angle);
 		fire_end.y+= 32*sin(angle);
+
+		vector_t pre(fire_end);
 
 		bool hit=false;
 		if(IS_SERVER) {
@@ -421,15 +425,21 @@ void Player::calc_fire(double dt) {
 				hit = hit || calc_player_hit(it->second, dt);
 			}
 		}
-		if(hit) {
-			break;
-		}
 
 		int mx, my;
 		calc_map_index(fire_end, mx, my);
 		if(map_value(mx, my) > 0) {
-			fire_end = prev;
-			//map[my][mx]+=10;
+			pre.x -= 16*cos(angle);
+			pre.y -= 16*sin(angle);
+			if(!hit) {
+				fire_end = pre;
+				//map[my][mx]+=10;
+			} else if( (fire_end - pos).norm2() > (pre - pos).norm2()) {
+				fire_end = pre;
+				//map[my][mx]+=10;
+			};
+			break;
+		} else if(hit) {
 			break;
 		}
 	}

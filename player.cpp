@@ -216,13 +216,20 @@ void Player::render_fire(double dt) {
 	if(fire) {
 		glLineWidth(2.0f);
 		glBegin(GL_LINES);
+		float start_x = pos.x + cos(angle)*PLAYER_H/2.0;
+		float start_y = pos.y + sin(angle)*PLAYER_H/2.0;
 		for(int i=0;i<12;++i) {
-			float dx = i*cos(angle+M_PI_2) - 6*cos(angle+M_PI_2) + cos(angle)*PLAYER_H/2.0;
-			float dy = i*sin(angle+M_PI_2) - 6*sin(angle+M_PI_2) + sin(angle)*PLAYER_H/2.0;
+			//float dx = i*cos(angle+M_PI_2) - 6*cos(angle+M_PI_2) + cos(angle)*PLAYER_H/2.0;
+			//float dy = i*sin(angle+M_PI_2) - 6*sin(angle+M_PI_2) + sin(angle)*PLAYER_H/2.0;
+			float dx = (i-6)*cos(angle+M_PI_2);
+			float dy = (i-6)*sin(angle+M_PI_2);
 			glColor3f(rbcolors[i][0],rbcolors[i][1],rbcolors[i][2]);
 
-			glVertex2f(pos.x+dx, pos.y+dy);
+			//From head of player to fire_end
+			glVertex2f(start_x+dx, start_y+dy);
 			glVertex2f(fire_end.x+dx, fire_end.y+dy);
+			//glVertex2f(fire_end.x, fire_end.y);
+			//From "dispencer" to head of player
 			glVertex2f(pos.x+dx, pos.y+dy);
 			glVertex2f(pos.x+cos(angle)*PLAYER_H*0.1,pos.y+sin(angle)*PLAYER_H*0.1);
 		}
@@ -354,10 +361,8 @@ bool Player::shield_hit(Player * player) {
 	//Calculate angle to shield inpact
 	float a = period(atan2(shield_intersect.y-pos.y, shield_intersect.x-pos.x)-M_PI_2);
 
-	//printf("Hit shield at angle: %f, shield angles: %f->%f\n", radians_to_degrees(a), radians_to_degrees(period(shield_angle-M_PI_4)), radians_to_degrees(period(shield_angle+M_PI_4)));
 
 	if (full_shield || ( period(shield_angle - M_PI_4) <= a && a <= period(shield_angle + M_PI_4) ) ) {
-		//printf("%s's shield got hit\n", nick.c_str());
 		player->fire_end = shield_intersect;
 		return true;
 	} else {
@@ -406,7 +411,6 @@ void Player::calc_fire(double dt) {
 		fire_end.x+= 32*cos(angle);
 		fire_end.y+= 32*sin(angle);
 
-		
 		bool hit=false;
 		if(IS_SERVER) {
 			for(std::map<Player*, int>::iterator it=server->players.begin(); it!=server->players.end(); ++it) {
@@ -417,8 +421,9 @@ void Player::calc_fire(double dt) {
 				hit = hit || calc_player_hit(it->second, dt);
 			}
 		}
-		if(hit)
+		if(hit) {
 			break;
+		}
 
 		int mx, my;
 		calc_map_index(fire_end, mx, my);

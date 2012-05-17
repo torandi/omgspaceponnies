@@ -73,6 +73,11 @@ struct vector_t {
 		y *= other.y;
 		return *(this);
 	}
+
+	bool operator==(const vector_t &other) const {
+		return (x == other.x && y == other.y);
+	}
+
 	float norm() const {
 		return std::sqrt(x*x+y*y);
 	}

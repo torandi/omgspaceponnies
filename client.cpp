@@ -95,6 +95,10 @@ void Client::incoming_network() {
 					p = players[_vars[0].i];
 					p->spawn_remote(vector_t(_vars[1].f, _vars[2].f));
 					break;
+				case NW_CMD_POWER:
+					me->power = _vars[0].f;	
+					printf("Server changed our power: %f\n", me->power);
+					break;
 				case NW_CMD_KILL:
 					{
 						Player * killer = players[_vars[0].i];

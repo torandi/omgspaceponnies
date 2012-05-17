@@ -149,13 +149,13 @@ int main(int argc, char* argv[]){
 	setup();
   bool run = true;
 
-	   render_splash();
+  render_splash();
 
   nw_var_t vars[PAYLOAD_SIZE-1];
 
-  if(optind - argc == 1)
+  if(optind < argc) {
 	  hostname = std::string(argv[optind++]);
-  else {
+  } else {
 	msg = "Searching for server...";
 	//Try to find with broadcast
 	int sockfd = create_udp_socket(BROADCAST_PORT, true);

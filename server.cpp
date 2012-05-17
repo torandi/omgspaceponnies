@@ -14,12 +14,12 @@
 Server * server = NULL;
 
 Server::Server(int port) {
-_vars = new nw_var_t[PAYLOAD_SIZE-1]; //Can't be more that this many vars
-_network_port = port;
-players = std::map<Player*, int>();
-_new_connections = std::list<int>();
-_next_player_id = 0;
-init_network();
+	_vars = new nw_var_t[PAYLOAD_SIZE-1]; //Can't be more that this many vars
+	_network_port = port;
+	players = std::map<Player*, int>();
+	_new_connections = std::list<int>();
+	_next_player_id = 0;
+	init_network();
 }
 
 Server::~Server() {
@@ -226,4 +226,10 @@ void Server::network_score(Player * player) {
 	int client_sock = players[player];
 	_vars[0].i = player->score;
 	send_frame(client_sock,no_addr, NW_CMD_SCORE, _vars);
+}
+
+void Server::network_power(Player * player) {
+	int client_sock = players[player];
+	_vars[0].f = player->power;
+	send_frame(client_sock,no_addr, NW_CMD_POWER, _vars);
 }

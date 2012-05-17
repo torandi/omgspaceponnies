@@ -38,6 +38,7 @@ class Server {
 
 		void network_kill(Player * killer, Player * killed);
 		void network_score(Player * player);
+		void network_power(Player * player);
 			
 		void check_new_connections();
 

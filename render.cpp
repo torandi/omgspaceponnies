@@ -173,13 +173,20 @@ void render(double dt){
 			it->second->render(dt);
 			#ifdef DEBUG
 				glPointSize(2.0f);
-				glColor3f(1,1,1);
 				glDisable(GL_TEXTURE_2D);
 				glBegin(GL_POINTS);
+					glColor3f(1,1,1);
 					for(int c = 0; c<NUM_COLLISION_POINTS; ++c) {
 						vector_t v = it->second->collision_point(c);
 						glVertex2f(v.x, v.y);
 					}
+					glColor3f(1, 0, 0);
+					glPointSize(10.f);
+					glVertex2f(it->second->pos.x + it->second->s1.x, it->second->pos.y + it->second->s1.y);
+					glColor3f(0, 0, 1);
+					glVertex2f(it->second->pos.x + it->second->s2.x, it->second->pos.y + it->second->s2.y);
+					glPointSize(2.0f);
+
 				glEnd();
 				glEnable(GL_TEXTURE_2D);
 			#endif

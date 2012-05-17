@@ -12,6 +12,7 @@
 #include <GL/gl.h>
 #include <math.h>
 #include <sys/time.h>
+#include <algorithm>
 
 #define REPULSE_LIMIT 0.01f
 
@@ -31,6 +32,10 @@ void Player::init(int _team) {
 	full_shield = false;
 	score = 0;
 	flash_power = 0;
+	last_power_sync = 0;
+
+	s1 = vector_t(0,0);
+	s2 = vector_t(0,0);
 
 	shield_angle = M_PI;
 
@@ -236,7 +241,16 @@ void Player::logic(double dt, float last_angle) {
 		pos += velocity * dt;
 
 		if(fire) {
-			calc_fire();
+			full_shield = false;
+			if(use_power(FIRE_POWER*dt))
+				calc_fire(dt);
+			else
+				fire = false;
+		}
+
+		if(full_shield) {
+			if(!use_power(SHIELD_POWER*dt))
+				full_shield = false;
 		}
 
 		power+=(power*0.3+1)*dt*PWR_REGEN_FACTOR;
@@ -259,7 +273,7 @@ void Player::logic(double dt, float last_angle) {
 			}
 		}
 		if(hit) {
-			printf("GAH! STILL IN COLLISION!\n");
+			//printf("GAH! STILL IN COLLISION!\n");
 			angle = last_angle;
 			pos = last;
 			velocity*=ELASTICITY;
@@ -303,28 +317,88 @@ bool Player::use_power(float amount) {
 	}
 }
 
-bool Player::calc_player_hit(Player * player) {
+bool Player::calc_player_hit(Player * player, double dt) {
 	if(player->id != id && player->dead == 0) {
-		vector_t d;
-		d.x = fire_end.x - player->pos.x;
-		d.y = fire_end.y - player->pos.y;
-		if(d.norm() < PLAYER_W/2.0)  {
-			if(IS_SERVER) {
-				player->dead = 1;
-				if(player->team != team)
-					add_score(KILL_SCORE);
-				else
-					add_score(TEAM_KILL_SCORE);
-				printf("Killed player %s\n", player->nick.c_str());
-				server->network_kill(this, player);
-			}
+		if(player->shield_hit(this) && player->use_power(SHIELD_HIT_POWER_DRAIN*dt) ) {
+			player->sync_power();
 			return true;
+		} else {
+			vector_t d;
+			d.x = fire_end.x - player->pos.x;
+			d.y = fire_end.y - player->pos.y;
+			if(d.norm() < PLAYER_W/2.0)  {
+				if(IS_SERVER) {
+					dead = 1;
+					if(team != team)
+						add_score(KILL_SCORE);
+					else
+						add_score(TEAM_KILL_SCORE);
+					printf("%s killed %s\n", player->nick.c_str(), nick.c_str());
+					server->network_kill(this, player);
+				}
+				return true;
+			}
 		}
 	}
 	return false;
 }
 
-void Player::calc_fire() {
+
+/**
+ * player: player that fired
+ */
+bool Player::shield_hit(Player * player) {
+
+	vector_t shield_intersect; 
+	if(!find_shield_intersection(player, &shield_intersect)) return false;
+
+	//Calculate angle to shield inpact
+	float a = period(atan2(shield_intersect.y-pos.y, shield_intersect.x-pos.x)-M_PI_2);
+
+	printf("Hit shield at angle: %f, shield angles: %f->%f\n", radians_to_degrees(a), radians_to_degrees(period(shield_angle-M_PI_4)), radians_to_degrees(period(shield_angle+M_PI_4)));
+
+	if (full_shield || ( period(shield_angle - M_PI_4) <= a && a <= period(shield_angle + M_PI_4) ) ) {
+		printf("%s's shield got hit\n", nick.c_str());
+		player->fire_end = shield_intersect;
+		return true;
+	} else {
+		return false;
+	}
+
+}
+
+/**
+ * Intersection of our shield and fire from player
+ * Return value is stored to ret
+ */
+bool Player::find_shield_intersection(Player * player, vector_t * ret) {
+	vector_t d = player->fire_end - player->pos; //Vector for fire
+	vector_t f = player->pos - pos; //Vector from me to shooter
+	float a = vector_t::dot(d, d);
+	float b = 2*vector_t::dot(f, d);
+	float c = vector_t::dot(f, f) - SHIELD_RADIUS * SHIELD_RADIUS ;
+
+	float discriminant = b*b-4*a*c;
+	if( discriminant < 0 ) {
+		return false; //Ray missed sphere
+	} else {
+		// ray didn't totally miss sphere,
+		// so there is a solution to
+		// the equation.
+
+		discriminant = sqrt( discriminant );
+		float t1 = (-b + discriminant)/(2*a);
+		float t2 = (-b - discriminant)/(2*a);
+
+		float t = std::min(t1, t2);
+		s1 = player->pos + d*t - pos;
+
+		*ret = player->pos + d*t;
+		return true;
+	}	
+}
+
+void Player::calc_fire(double dt) {
 	fire_end = pos;
 	int len = 0;
 	while(len < MAX_FIRE_LENGHT) {
@@ -337,11 +411,11 @@ void Player::calc_fire() {
 		bool hit=false;
 		if(IS_SERVER) {
 			for(std::map<Player*, int>::iterator it=server->players.begin(); it!=server->players.end(); ++it) {
-				hit = calc_player_hit(it->first);
+				hit = hit || calc_player_hit(it->first, dt);
 			}
 		} else {
 			for(std::map<int, Player*>::iterator it=client->players.begin(); it!=client->players.end(); ++it) {
-				hit |= calc_player_hit(it->second);
+				hit = hit || calc_player_hit(it->second, dt);
 			}
 		}
 		if(hit)
@@ -356,6 +430,15 @@ void Player::calc_fire() {
 		}
 	}
 
+}
+
+void Player::sync_power() {
+	if(IS_SERVER) {
+		if(curtime() - last_power_sync > MIN_POWER_SYNC_DELAY) {
+			last_power_sync = curtime();
+			server->network_power(this);
+		}
+	}
 }
 
 void Player::add_score(int _score) {

@@ -74,20 +74,6 @@ void logic(double dt) {
 
 		client->me->logic(dt, last_a);
 
-		if(client->me->fire) {
-			client->me->full_shield = false;
-			if(client->me->use_power(FIRE_POWER*dt))
-				client->me->calc_fire();
-			else
-				client->me->fire = false;
-		}
-
-		if(client->me->full_shield) {
-			if(!client->me->use_power(SHIELD_POWER*dt))
-				client->me->full_shield = false;
-		}
-
-
 		if(last_send+SEND_DELAY < curtime()) {
 			char buffer[1024];
 

@@ -93,7 +93,6 @@ void Player::spawn() {
 	power = 1.0;
 	angle = M_PI;
 	health = 100;
-	client->send_spawn();
 }
 
 void Player::spawn_remote(vector_t new_pos) {
@@ -328,12 +327,12 @@ bool Player::calc_player_hit(Player * player, double dt) {
 			d.y = fire_end.y - player->pos.y;
 			if(d.norm() < PLAYER_W/2.0)  {
 				if(IS_SERVER) {
-					dead = 1;
-					if(team != team)
+					player->dead = 1;
+					if(team != player->team)
 						add_score(KILL_SCORE);
 					else
 						add_score(TEAM_KILL_SCORE);
-					printf("%s killed %s\n", player->nick.c_str(), nick.c_str());
+					printf("%s killed %s\n", nick.c_str(), player->nick.c_str());
 					server->network_kill(this, player);
 				}
 				return true;
@@ -355,10 +354,10 @@ bool Player::shield_hit(Player * player) {
 	//Calculate angle to shield inpact
 	float a = period(atan2(shield_intersect.y-pos.y, shield_intersect.x-pos.x)-M_PI_2);
 
-	printf("Hit shield at angle: %f, shield angles: %f->%f\n", radians_to_degrees(a), radians_to_degrees(period(shield_angle-M_PI_4)), radians_to_degrees(period(shield_angle+M_PI_4)));
+	//printf("Hit shield at angle: %f, shield angles: %f->%f\n", radians_to_degrees(a), radians_to_degrees(period(shield_angle-M_PI_4)), radians_to_degrees(period(shield_angle+M_PI_4)));
 
 	if (full_shield || ( period(shield_angle - M_PI_4) <= a && a <= period(shield_angle + M_PI_4) ) ) {
-		printf("%s's shield got hit\n", nick.c_str());
+		//printf("%s's shield got hit\n", nick.c_str());
 		player->fire_end = shield_intersect;
 		return true;
 	} else {

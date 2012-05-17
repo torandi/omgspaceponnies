@@ -93,6 +93,7 @@ void Client::incoming_network() {
 					break;
 				case NW_CMD_SPAWN:
 					p = players[_vars[0].i];
+					printf("Spawn player %s\n", p->nick.c_str());
 					p->spawn_remote(vector_t(_vars[1].f, _vars[2].f));
 					break;
 				case NW_CMD_POWER:
@@ -138,7 +139,6 @@ void Client::incoming_network() {
 					me->id=_vars[0].i;
 					printf("Accepted, player id: %i\n", me->id);
 					players[me->id] = me;
-					me->spawn();
 					ready = true;
 					break;
 				default:
@@ -181,12 +181,6 @@ void Client::send_rotate() {
 	send_cmd( NW_CMD_ROTATE);
 }	
 
-void Client::send_spawn() {
-	_vars[0].i = me->id;
-	_vars[1].f = me->pos.x;
-	_vars[2].f = me->pos.y;
-	send_cmd( NW_CMD_SPAWN);
-}	
 
 void Client::send_shield() {
 	_vars[0].i = me->id;

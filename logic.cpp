@@ -104,10 +104,6 @@ void logic(double dt) {
 				
 			last_send = curtime();
 		}
-	} else {
-		++client->me->dead;
-		if(client->me->dead > RESPAWN_TIME)
-			client->me->spawn();
 	}
 }
 

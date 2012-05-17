@@ -19,7 +19,7 @@ frame_t protocol[] = {
 	{NW_CMD_ROTATE, 2, { NW_VAR_UINT16, NW_VAR_FLOAT } }, 
 	{NW_CMD_FIRE, 2, { NW_VAR_UINT16, NW_VAR_CHAR } }, //player id, 0/1 (1=start, 0=stop)
 	{NW_CMD_KILL, 2, { NW_VAR_UINT16, NW_VAR_UINT16 } }, //Killer, killed
-	{NW_CMD_SPAWN, 3, { NW_VAR_UINT16, NW_VAR_FLOAT, NW_VAR_FLOAT} }, 
+	{NW_CMD_SPAWN, 3, { NW_VAR_UINT16, NW_VAR_FLOAT, NW_VAR_FLOAT} },  //player, x, y
 	{NW_CMD_SCORE, 1, { NW_VAR_UINT16 }}, //Player score
 	{NW_CMD_POWER, 1, { NW_VAR_FLOAT }}, //Player power
 	{NW_CMD_SHIELD, 3, { NW_VAR_UINT16, NW_VAR_FLOAT, NW_VAR_CHAR }}, //Player id, shield angle, full_shield

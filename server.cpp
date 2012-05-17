@@ -39,7 +39,14 @@ void Server::run(double dt) {
 	std::map<Player*, int>::iterator it;
 	for(it=players.begin(); it!=players.end(); ++it) {
 		//Run player logic
-		it->first->logic(dt);
+		if(it->first->dead == 0) {
+			it->first->logic(dt);
+		} else {
+			++it->first->dead;
+			if(it->first->dead > RESPAWN_TIME) {
+				spawn_player(it->first);
+			}
+		}
 	}
 
 }
@@ -81,14 +88,6 @@ void Server::incoming_network() {
 						remove_player(p);
 					} else {
 						send_error(sockfd,"QUIT: Invalid player id");
-					}
-					break;
-				case NW_CMD_SPAWN:
-					if(p->id == _vars[0].i) {
-						p->spawn_remote(vector_t(_vars[1].f, _vars[2].f));
-						send_frame_to_all(NW_CMD_SPAWN, p->id);
-					} else {
-						send_error(sockfd,"SPAWN: Invalid player id");
 					}
 					break;
 				case NW_CMD_SHIELD:
@@ -177,6 +176,7 @@ void Server::incoming_network() {
 								send_frame(sockfd, no_addr, NW_CMD_JOIN, _vars);
 							}
 						}
+						spawn_player(p);
 						break;
 					}
 				default:
@@ -232,4 +232,13 @@ void Server::network_power(Player * player) {
 	int client_sock = players[player];
 	_vars[0].f = player->power;
 	send_frame(client_sock,no_addr, NW_CMD_POWER, _vars);
+}
+
+void Server::spawn_player(Player * p) {
+	p->spawn();
+	printf("Respawn %s\n", p->nick.c_str());
+	_vars[0].i = p->id;
+	_vars[1].f = p->pos.x;
+	_vars[2].f = p->pos.y;
+	send_frame_to_all(NW_CMD_SPAWN);
 }

@@ -27,6 +27,7 @@ class Server {
 	void send_frame_to_all(nw_cmd_t cmd, int ignore_player_id=-1);
 
 	void remove_player(Player * p);
+	void spawn_player(Player * p);
 
 	public:
 		std::map<Player*, int> players; //Int is socket addr

@@ -30,7 +30,6 @@ class Client {
 		void send_move(const vector_t &delta);
 		void send_rotate();
 		void send_fire();
-		void send_spawn();
 		void send_quit();
 		void send_shield();
 };
